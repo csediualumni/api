@@ -1,0 +1,40 @@
+/**
+ * All permission keys used by the system.
+ * These are the ONLY hardcoded values — every role assignment and check
+ * happens dynamically against these keys stored in the database.
+ */
+export const PERMISSIONS = {
+  // User management
+  USERS_READ: 'users:read',
+  USERS_WRITE: 'users:write',
+  USERS_DELETE: 'users:delete',
+  USERS_ASSIGN_ROLE: 'users:assign_role',
+
+  // Role management
+  ROLES_READ: 'roles:read',
+  ROLES_WRITE: 'roles:write',
+  ROLES_DELETE: 'roles:delete',
+
+  // Permission management
+  PERMISSIONS_READ: 'permissions:read',
+  PERMISSIONS_ASSIGN: 'permissions:assign',
+} as const;
+
+export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+/** Flat metadata describing every permission — used by the seeder */
+export const ALL_PERMISSIONS: {
+  key: PermissionKey;
+  description: string;
+  group: string;
+}[] = [
+  { key: 'users:read',        description: 'View user list',              group: 'Users' },
+  { key: 'users:write',       description: 'Create or update users',      group: 'Users' },
+  { key: 'users:delete',      description: 'Delete users',                group: 'Users' },
+  { key: 'users:assign_role', description: 'Assign/remove roles on users', group: 'Users' },
+  { key: 'roles:read',        description: 'View roles list',             group: 'Roles' },
+  { key: 'roles:write',       description: 'Create or update roles',      group: 'Roles' },
+  { key: 'roles:delete',      description: 'Delete roles',                group: 'Roles' },
+  { key: 'permissions:read',  description: 'View permissions list',       group: 'Permissions' },
+  { key: 'permissions:assign', description: 'Assign permissions to roles', group: 'Permissions' },
+];
