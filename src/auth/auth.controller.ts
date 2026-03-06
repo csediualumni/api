@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
   Req,
@@ -17,7 +19,12 @@ import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { UsersService } from '../users/users.service';
-import type { UpdateProfileDto } from '../users/users.service';
+import type {
+  UpdateProfileDto,
+  UpsertExperienceDto,
+  UpsertEducationDto,
+  UpsertAchievementDto,
+} from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
@@ -87,7 +94,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async me(@Req() req: Request) {
     const jwtUser = req.user as { id: string };
-    const user = await this.users.findById(jwtUser.id);
+    const user = await this.users.findByIdWithProfile(jwtUser.id);
     if (!user) return jwtUser;
     const { password: _pw, resetToken: _rt, resetTokenExpiry: _rte, ...profile } = user;
     return profile;
@@ -98,5 +105,95 @@ export class AuthController {
   async updateMe(@Req() req: Request, @Body() dto: UpdateProfileDto) {
     const jwtUser = req.user as { id: string };
     return this.users.updateProfile(jwtUser.id, dto);
+  }
+
+  // ──────────────────────────────────────────────
+  // Experience
+  // ──────────────────────────────────────────────
+
+  @Post('me/experience')
+  @UseGuards(JwtAuthGuard)
+  addExperience(@Req() req: Request, @Body() dto: UpsertExperienceDto) {
+    const { id } = req.user as { id: string };
+    return this.users.addExperience(id, dto);
+  }
+
+  @Patch('me/experience/:entryId')
+  @UseGuards(JwtAuthGuard)
+  updateExperience(
+    @Req() req: Request,
+    @Param('entryId') entryId: string,
+    @Body() dto: UpsertExperienceDto,
+  ) {
+    const { id } = req.user as { id: string };
+    return this.users.updateExperience(id, entryId, dto);
+  }
+
+  @Delete('me/experience/:entryId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  deleteExperience(@Req() req: Request, @Param('entryId') entryId: string) {
+    const { id } = req.user as { id: string };
+    return this.users.deleteExperience(id, entryId);
+  }
+
+  // ──────────────────────────────────────────────
+  // Education
+  // ──────────────────────────────────────────────
+
+  @Post('me/education')
+  @UseGuards(JwtAuthGuard)
+  addEducation(@Req() req: Request, @Body() dto: UpsertEducationDto) {
+    const { id } = req.user as { id: string };
+    return this.users.addEducation(id, dto);
+  }
+
+  @Patch('me/education/:entryId')
+  @UseGuards(JwtAuthGuard)
+  updateEducation(
+    @Req() req: Request,
+    @Param('entryId') entryId: string,
+    @Body() dto: UpsertEducationDto,
+  ) {
+    const { id } = req.user as { id: string };
+    return this.users.updateEducation(id, entryId, dto);
+  }
+
+  @Delete('me/education/:entryId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  deleteEducation(@Req() req: Request, @Param('entryId') entryId: string) {
+    const { id } = req.user as { id: string };
+    return this.users.deleteEducation(id, entryId);
+  }
+
+  // ──────────────────────────────────────────────
+  // Achievements
+  // ──────────────────────────────────────────────
+
+  @Post('me/achievements')
+  @UseGuards(JwtAuthGuard)
+  addAchievement(@Req() req: Request, @Body() dto: UpsertAchievementDto) {
+    const { id } = req.user as { id: string };
+    return this.users.addAchievement(id, dto);
+  }
+
+  @Patch('me/achievements/:entryId')
+  @UseGuards(JwtAuthGuard)
+  updateAchievement(
+    @Req() req: Request,
+    @Param('entryId') entryId: string,
+    @Body() dto: UpsertAchievementDto,
+  ) {
+    const { id } = req.user as { id: string };
+    return this.users.updateAchievement(id, entryId, dto);
+  }
+
+  @Delete('me/achievements/:entryId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  deleteAchievement(@Req() req: Request, @Param('entryId') entryId: string) {
+    const { id } = req.user as { id: string };
+    return this.users.deleteAchievement(id, entryId);
   }
 }

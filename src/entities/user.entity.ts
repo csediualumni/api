@@ -9,6 +9,9 @@ import {
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { UserRole } from './user-role.entity';
+import { UserExperience } from './user-experience.entity';
+import { UserEducation } from './user-education.entity';
+import { UserAchievement } from './user-achievement.entity';
 
 @Entity('users')
 export class User {
@@ -89,6 +92,15 @@ export class User {
 
   @OneToMany(() => UserRole, (ur) => ur.user)
   userRoles: UserRole[];
+
+  @OneToMany(() => UserExperience, (e) => e.user)
+  experiences: UserExperience[];
+
+  @OneToMany(() => UserEducation, (e) => e.user)
+  educations: UserEducation[];
+
+  @OneToMany(() => UserAchievement, (a) => a.user)
+  achievements: UserAchievement[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

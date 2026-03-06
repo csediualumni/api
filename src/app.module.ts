@@ -16,6 +16,9 @@ import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { UserRole } from './entities/user-role.entity';
 import { RolePermission } from './entities/role-permission.entity';
+import { UserExperience } from './entities/user-experience.entity';
+import { UserEducation } from './entities/user-education.entity';
+import { UserAchievement } from './entities/user-achievement.entity';
 
 @Module({
   imports: [
@@ -25,7 +28,7 @@ import { RolePermission } from './entities/role-permission.entity';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
-        entities: [User, Role, Permission, UserRole, RolePermission, Invoice, InvoicePayment],
+        entities: [User, Role, Permission, UserRole, RolePermission, Invoice, InvoicePayment, UserExperience, UserEducation, UserAchievement],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
       }),
