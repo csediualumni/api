@@ -10,6 +10,9 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { AdminModule } from './admin/admin.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { ContactModule } from './contact/contact.module';
+import { ContactTicket } from './entities/contact-ticket.entity';
+import { ContactTicketComment } from './entities/contact-ticket-comment.entity';
 import { Invoice } from './entities/invoice.entity';
 import { InvoicePayment } from './entities/invoice-payment.entity';
 import { User } from './entities/user.entity';
@@ -42,6 +45,8 @@ import { NewsletterSubscription } from './entities/newsletter-subscription.entit
           UserEducation,
           UserAchievement,
           NewsletterSubscription,
+          ContactTicket,
+          ContactTicketComment,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -54,6 +59,7 @@ import { NewsletterSubscription } from './entities/newsletter-subscription.entit
     AdminModule,
     InvoicesModule,
     NewsletterModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -16,7 +16,8 @@ import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions.constants';
 import { UsersService } from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
-import { IsArray, IsString, IsEmail, IsNotEmpty } from 'class-validator';
+import { ContactService } from '../contact/contact.service';
+import { IsArray, IsString, IsNotEmpty, IsIn } from 'class-validator';
 
 class SetRolesDto {
   @IsArray() @IsString({ each: true }) roleIds: string[];
@@ -27,12 +28,22 @@ class SendNewsletterDto {
   @IsString() @IsNotEmpty() htmlBody: string;
 }
 
+class UpdateTicketStatusDto {
+  @IsString() @IsIn(['open', 'in_progress', 'resolved']) status: string;
+}
+
+class AddTicketCommentDto {
+  @IsString() @IsNotEmpty() body: string;
+  @IsString() @IsNotEmpty() authorName: string;
+}
+
 @Controller('admin')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AdminController {
   constructor(
     private readonly users: UsersService,
     private readonly newsletter: NewsletterService,
+    private readonly contact: ContactService,
   ) {}
 
   // ── Users ──────────────────────────────────────────────────
@@ -92,5 +103,38 @@ export class AdminController {
   @RequirePermissions(PERMISSIONS.NEWSLETTER_WRITE)
   sendNewsletter(@Body() dto: SendNewsletterDto) {
     return this.newsletter.sendBroadcast(dto.subject, dto.htmlBody);
+  }
+
+  // ── Contact Tickets ────────────────────────────────────────
+
+  @Get('contact/tickets')
+  @RequirePermissions(PERMISSIONS.CONTACT_READ)
+  listTickets() {
+    return this.contact.findAll();
+  }
+
+  @Get('contact/tickets/:id')
+  @RequirePermissions(PERMISSIONS.CONTACT_READ)
+  getTicket(@Param('id') id: string) {
+    return this.contact.findOne(id);
+  }
+
+  @Patch('contact/tickets/:id/status')
+  @RequirePermissions(PERMISSIONS.CONTACT_WRITE)
+  updateTicketStatus(@Param('id') id: string, @Body() dto: UpdateTicketStatusDto) {
+    return this.contact.updateStatus(id, dto.status as any);
+  }
+
+  @Post('contact/tickets/:id/comments')
+  @RequirePermissions(PERMISSIONS.CONTACT_WRITE)
+  addComment(@Param('id') id: string, @Body() dto: AddTicketCommentDto) {
+    return this.contact.addComment(id, { body: dto.body, authorName: dto.authorName });
+  }
+
+  @Delete('contact/tickets/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.CONTACT_WRITE)
+  deleteTicket(@Param('id') id: string) {
+    return this.contact.remove(id);
   }
 }

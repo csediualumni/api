@@ -26,6 +26,10 @@ export const PERMISSIONS = {
   // Newsletter management
   NEWSLETTER_READ: 'newsletter:read',
   NEWSLETTER_WRITE: 'newsletter:write',
+
+  // Contact ticket management
+  CONTACT_READ: 'contact:read',
+  CONTACT_WRITE: 'contact:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -76,5 +80,15 @@ export const ALL_PERMISSIONS: {
     key: 'newsletter:write',
     description: 'Manage subscriptions and send newsletter emails',
     group: 'Newsletter',
+  },
+  {
+    key: 'contact:read',
+    description: 'View contact form submissions / tickets',
+    group: 'Contact',
+  },
+  {
+    key: 'contact:write',
+    description: 'Update ticket status and add comments',
+    group: 'Contact',
   },
 ];

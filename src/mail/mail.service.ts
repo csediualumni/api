@@ -254,4 +254,121 @@ export class MailService {
 
     this.logger.log(`Newsletter email sent to ${to}`);
   }
+
+  async sendContactTicketCreated(
+    to: string,
+    name: string,
+    subject: string,
+    ticketId: string,
+  ): Promise<void> {
+    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const shortId = ticketId.slice(0, 8).toUpperCase();
+
+    await this.transporter.sendMail({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject: `We received your message – CSE DIU Alumni`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
+          <h2 style="margin:0 0 8px;color:#1e3a5f;font-size:20px;">Message Received</h2>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
+            Hi <strong>${name}</strong>, thank you for reaching out! We have received your message and our team will get back to you as soon as possible.
+          </p>
+          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+            <table style="width:100%;font-size:13px;color:#3f3f46;">
+              <tr><td style="padding:4px 0;color:#71717a;">Reference #</td><td style="padding:4px 0;font-family:monospace;font-weight:600;">${shortId}</td></tr>
+              <tr><td style="padding:4px 0;color:#71717a;">Subject</td><td style="padding:4px 0;">${subject}</td></tr>
+              <tr><td style="padding:4px 0;color:#71717a;">Status</td><td style="padding:4px 0;"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;">Open</span></td></tr>
+            </table>
+          </div>
+          <p style="color:#a1a1aa;font-size:12px;margin:24px 0 0;">
+            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>
+          </p>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Contact ticket created email sent to ${to}`);
+  }
+
+  async sendContactTicketStatusChanged(
+    to: string,
+    name: string,
+    subject: string,
+    newStatus: string,
+  ): Promise<void> {
+    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+
+    const statusLabel: Record<string, string> = {
+      open: 'Open',
+      in_progress: 'In Progress',
+      resolved: 'Resolved',
+    };
+    const statusStyle: Record<string, string> = {
+      open: 'background:#dbeafe;color:#1d4ed8;',
+      in_progress: 'background:#fef3c7;color:#92400e;',
+      resolved: 'background:#d1fae5;color:#065f46;',
+    };
+
+    const label = statusLabel[newStatus] ?? newStatus;
+    const style = statusStyle[newStatus] ?? 'background:#f4f4f5;color:#3f3f46;';
+
+    await this.transporter.sendMail({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject: `Your message status updated: ${label} – CSE DIU Alumni`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
+          <h2 style="margin:0 0 8px;color:#1e3a5f;font-size:20px;">Ticket Status Updated</h2>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
+            Hi <strong>${name}</strong>, the status of your message <em>"${subject}"</em> has been updated.
+          </p>
+          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+            <table style="width:100%;font-size:13px;color:#3f3f46;">
+              <tr><td style="padding:4px 0;color:#71717a;">Subject</td><td style="padding:4px 0;">${subject}</td></tr>
+              <tr><td style="padding:4px 0;color:#71717a;">New Status</td><td style="padding:4px 0;"><span style="${style}padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;">${label}</span></td></tr>
+            </table>
+          </div>
+          <p style="color:#a1a1aa;font-size:12px;margin:24px 0 0;">
+            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>
+          </p>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Contact ticket status-changed email sent to ${to}`);
+  }
+
+  async sendContactTicketComment(
+    to: string,
+    name: string,
+    subject: string,
+    authorName: string,
+    body: string,
+  ): Promise<void> {
+    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+
+    await this.transporter.sendMail({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject: `New reply on your message – CSE DIU Alumni`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
+          <h2 style="margin:0 0 8px;color:#1e3a5f;font-size:20px;">New Reply</h2>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
+            Hi <strong>${name}</strong>, there is a new reply on your message <em>"${subject}"</em> from <strong>${authorName}</strong>:
+          </p>
+          <div style="background:#fff;border-left:4px solid #2563eb;border-radius:4px;padding:16px 20px;margin:0 0 20px;color:#3f3f46;font-size:14px;line-height:1.7;white-space:pre-wrap;">${body}</div>
+          <p style="color:#52525b;font-size:14px;margin:0 0 0;">
+            If you have further questions, simply reply to this email or contact us at <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>.
+          </p>
+          <p style="color:#a1a1aa;font-size:12px;margin:24px 0 0;">
+            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>
+          </p>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Contact ticket comment email sent to ${to}`);
+  }
 }
