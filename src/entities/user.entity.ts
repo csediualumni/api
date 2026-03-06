@@ -41,6 +41,52 @@ export class User {
   @Column({ name: 'reset_token_expiry', nullable: true, type: 'timestamptz' })
   resetTokenExpiry: Date | null;
 
+  // ── Profile fields ────────────────────────────────────────────
+
+  @Column({ nullable: true, type: 'varchar' })
+  phone: string | null;
+
+  @Column({ nullable: true, type: 'int' })
+  batch: number | null;
+
+  @Column({ nullable: true, type: 'text' })
+  bio: string | null;
+
+  @Column({ name: 'job_title', nullable: true, type: 'varchar' })
+  jobTitle: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  company: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  industry: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  city: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  country: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  linkedin: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  github: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  twitter: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  website: string | null;
+
+  @Column({ name: 'open_to_mentoring', default: false })
+  openToMentoring: boolean;
+
+  @Column({ type: 'simple-array', nullable: true })
+  skills: string[] | null;
+
+  // ── Relations ─────────────────────────────────────────────────
+
   @OneToMany(() => UserRole, (ur) => ur.user)
   userRoles: UserRole[];
 

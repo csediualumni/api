@@ -6,6 +6,24 @@ import { UserRole } from '../entities/user-role.entity';
 
 export type SafeUser = Omit<User, 'password' | 'generateId'>;
 
+export interface UpdateProfileDto {
+  displayName?: string;
+  phone?: string;
+  batch?: number;
+  bio?: string;
+  jobTitle?: string;
+  company?: string;
+  industry?: string;
+  city?: string;
+  country?: string;
+  linkedin?: string;
+  github?: string;
+  twitter?: string;
+  website?: string;
+  skills?: string[];
+  openToMentoring?: boolean;
+}
+
 export type UserWithPermissions = SafeUser & {
   permissions: string[];
   roles: { id: string; name: string }[];
@@ -94,6 +112,15 @@ export class UsersService {
   ): Promise<User> {
     await this.userRepo.update(id, data);
     return this.userRepo.findOneOrFail({ where: { id } });
+  }
+
+  // ── Profile update ────────────────────────────────────────────
+
+  async updateProfile(id: string, dto: UpdateProfileDto): Promise<SafeUser> {
+    await this.userRepo.update(id, dto);
+    const user = await this.userRepo.findOneOrFail({ where: { id } });
+    const { password: _pw, ...safe } = user;
+    return safe as SafeUser;
   }
 
   // ── Role assignment ──────────────────────────────────────────

@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
@@ -15,11 +16,14 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
+import { UsersService } from '../users/users.service';
+import type { UpdateProfileDto } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
+    private readonly users: UsersService,
     private readonly config: ConfigService,
   ) {}
 
@@ -81,7 +85,18 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@Req() req: Request) {
-    return req.user;
+  async me(@Req() req: Request) {
+    const jwtUser = req.user as { id: string };
+    const user = await this.users.findById(jwtUser.id);
+    if (!user) return jwtUser;
+    const { password: _pw, resetToken: _rt, resetTokenExpiry: _rte, ...profile } = user;
+    return profile;
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  async updateMe(@Req() req: Request, @Body() dto: UpdateProfileDto) {
+    const jwtUser = req.user as { id: string };
+    return this.users.updateProfile(jwtUser.id, dto);
   }
 }
