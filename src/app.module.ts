@@ -8,6 +8,9 @@ import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { AdminModule } from './admin/admin.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { Invoice } from './entities/invoice.entity';
+import { InvoicePayment } from './entities/invoice-payment.entity';
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
@@ -22,7 +25,7 @@ import { RolePermission } from './entities/role-permission.entity';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
-        entities: [User, Role, Permission, UserRole, RolePermission],
+        entities: [User, Role, Permission, UserRole, RolePermission, Invoice, InvoicePayment],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
       }),
@@ -32,6 +35,7 @@ import { RolePermission } from './entities/role-permission.entity';
     RolesModule,
     PermissionsModule,
     AdminModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

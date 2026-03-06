@@ -18,6 +18,10 @@ export const PERMISSIONS = {
   // Permission management
   PERMISSIONS_READ: 'permissions:read',
   PERMISSIONS_ASSIGN: 'permissions:assign',
+
+  // Invoice management
+  INVOICES_READ: 'invoices:read',
+  INVOICES_WRITE: 'invoices:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -37,4 +41,6 @@ export const ALL_PERMISSIONS: {
   { key: 'roles:delete',      description: 'Delete roles',                group: 'Roles' },
   { key: 'permissions:read',  description: 'View permissions list',       group: 'Permissions' },
   { key: 'permissions:assign', description: 'Assign permissions to roles', group: 'Permissions' },
+  { key: 'invoices:read',     description: 'View all invoices & payments', group: 'Invoices' },
+  { key: 'invoices:write',    description: 'Manage invoice & payment status, issue refunds', group: 'Invoices' },
 ];
