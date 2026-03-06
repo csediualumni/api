@@ -60,7 +60,10 @@ export class MailService {
     amount: number,
     paymentUrl: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
     const formattedAmount = `৳${amount.toLocaleString()}`;
     const shortId = invoiceId.slice(0, 8).toUpperCase();
 
@@ -96,7 +99,9 @@ export class MailService {
       `,
     });
 
-    this.logger.log(`Invoice created email sent to ${to} for invoice ${invoiceId}`);
+    this.logger.log(
+      `Invoice created email sent to ${to} for invoice ${invoiceId}`,
+    );
   }
 
   async sendPaymentSubmitted(
@@ -106,7 +111,10 @@ export class MailService {
     amount: number,
     transactionId: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
     const formattedAmount = `৳${amount.toLocaleString()}`;
     const shortId = invoiceId.slice(0, 8).toUpperCase();
 
@@ -139,7 +147,9 @@ export class MailService {
       `,
     });
 
-    this.logger.log(`Payment submitted email sent to ${to} for invoice ${invoiceId}`);
+    this.logger.log(
+      `Payment submitted email sent to ${to} for invoice ${invoiceId}`,
+    );
   }
 
   async sendPaymentStatusUpdated(
@@ -150,7 +160,10 @@ export class MailService {
     newStatus: string,
     adminNote?: string | null,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
     const formattedAmount = `৳${amount.toLocaleString()}`;
     const shortId = invoiceId.slice(0, 8).toUpperCase();
 
@@ -164,7 +177,7 @@ export class MailService {
       verified: 'background:#d1fae5;color:#065f46;',
       rejected: 'background:#fee2e2;color:#991b1b;',
       refunded: 'background:#e0e7ff;color:#3730a3;',
-      pending:  'background:#fef3c7;color:#92400e;',
+      pending: 'background:#fef3c7;color:#92400e;',
     };
 
     const label = statusLabel[newStatus] ?? newStatus;
@@ -196,6 +209,49 @@ export class MailService {
       `,
     });
 
-    this.logger.log(`Payment status (${newStatus}) email sent to ${to} for invoice ${invoiceId}`);
+    this.logger.log(
+      `Payment status (${newStatus}) email sent to ${to} for invoice ${invoiceId}`,
+    );
+  }
+
+  async sendNewsletter(
+    to: string,
+    subject: string,
+    htmlBody: string,
+  ): Promise<void> {
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
+    const unsubToken = Buffer.from(to).toString('base64');
+    const apiBase = this.config.get<string>(
+      'API_URL',
+      'https://csediualumni.com',
+    );
+    const unsubLink = `${apiBase}/newsletter/unsubscribe?token=${encodeURIComponent(unsubToken)}`;
+
+    await this.transporter.sendMail({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;">
+          <div style="background:#1e3a5f;padding:20px 32px;">
+            <h2 style="margin:0;color:#fff;font-size:18px;letter-spacing:.5px;">CSE DIU Alumni Network</h2>
+          </div>
+          <div style="padding:28px 32px;background:#fff;">
+            ${htmlBody}
+          </div>
+          <div style="padding:16px 32px;background:#f4f4f5;border-top:1px solid #e4e4e7;">
+            <p style="margin:0;font-size:12px;color:#a1a1aa;">
+              You're receiving this because you subscribed to the CSE DIU Alumni newsletter.
+              <a href="${unsubLink}" style="color:#2563eb;">Unsubscribe</a>
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Newsletter email sent to ${to}`);
   }
 }

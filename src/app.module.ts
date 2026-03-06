@@ -9,6 +9,7 @@ import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { AdminModule } from './admin/admin.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 import { Invoice } from './entities/invoice.entity';
 import { InvoicePayment } from './entities/invoice-payment.entity';
 import { User } from './entities/user.entity';
@@ -19,6 +20,7 @@ import { RolePermission } from './entities/role-permission.entity';
 import { UserExperience } from './entities/user-experience.entity';
 import { UserEducation } from './entities/user-education.entity';
 import { UserAchievement } from './entities/user-achievement.entity';
+import { NewsletterSubscription } from './entities/newsletter-subscription.entity';
 
 @Module({
   imports: [
@@ -28,7 +30,19 @@ import { UserAchievement } from './entities/user-achievement.entity';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
-        entities: [User, Role, Permission, UserRole, RolePermission, Invoice, InvoicePayment, UserExperience, UserEducation, UserAchievement],
+        entities: [
+          User,
+          Role,
+          Permission,
+          UserRole,
+          RolePermission,
+          Invoice,
+          InvoicePayment,
+          UserExperience,
+          UserEducation,
+          UserAchievement,
+          NewsletterSubscription,
+        ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
       }),
@@ -39,6 +53,7 @@ import { UserAchievement } from './entities/user-achievement.entity';
     PermissionsModule,
     AdminModule,
     InvoicesModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

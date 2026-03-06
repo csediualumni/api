@@ -10,7 +10,12 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { InvoicePayment } from './invoice-payment.entity';
 
-export type InvoiceStatus = 'pending' | 'partial' | 'paid' | 'cancelled' | 'refunded';
+export type InvoiceStatus =
+  | 'pending'
+  | 'partial'
+  | 'paid'
+  | 'cancelled'
+  | 'refunded';
 export type InvoiceType = 'donation' | 'event' | 'membership' | 'other';
 
 @Entity('invoices')

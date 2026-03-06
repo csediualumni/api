@@ -11,7 +11,15 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
@@ -25,7 +33,9 @@ import type { PaymentStatus } from '../entities/invoice-payment.entity';
 // ── DTOs ─────────────────────────────────────────────────────────
 
 class CreateInvoiceDto {
-  @IsString() @IsOptional() @IsIn(['donation', 'event', 'membership', 'other'])
+  @IsString()
+  @IsOptional()
+  @IsIn(['donation', 'event', 'membership', 'other'])
   type?: 'donation' | 'event' | 'membership' | 'other';
 
   @IsString() @IsNotEmpty() description: string;
@@ -37,7 +47,8 @@ class CreateInvoiceDto {
   @IsString() @IsOptional() donorName?: string;
   @IsString() @IsOptional() donorMessage?: string;
 
-  @IsBoolean() @IsOptional()
+  @IsBoolean()
+  @IsOptional()
   @Transform(({ value }) => value === true || value === 'true')
   isAnonymous?: boolean;
 
@@ -51,12 +62,16 @@ class SubmitPaymentDto {
 }
 
 class UpdatePaymentStatusDto {
-  @IsString() @IsIn(['pending', 'verified', 'rejected', 'refunded']) status: PaymentStatus;
+  @IsString()
+  @IsIn(['pending', 'verified', 'rejected', 'refunded'])
+  status: PaymentStatus;
   @IsString() @IsOptional() adminNote?: string;
 }
 
 class UpdateInvoiceStatusDto {
-  @IsString() @IsIn(['pending', 'partial', 'paid', 'cancelled', 'refunded']) status: InvoiceStatus;
+  @IsString()
+  @IsIn(['pending', 'partial', 'paid', 'cancelled', 'refunded'])
+  status: InvoiceStatus;
 }
 
 class RefundPaymentDto {
@@ -106,7 +121,10 @@ export class InvoicesController {
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(PERMISSIONS.INVOICES_WRITE)
-  updateInvoiceStatus(@Param('id') id: string, @Body() dto: UpdateInvoiceStatusDto) {
+  updateInvoiceStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateInvoiceStatusDto,
+  ) {
     return this.invoices.updateInvoiceStatus(id, dto.status);
   }
 

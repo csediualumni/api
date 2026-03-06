@@ -59,7 +59,10 @@ export class AuthService {
     const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await this.users.setResetToken(user.id, token, expiry);
 
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:4200');
+    const frontendUrl = this.config.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:4200',
+    );
     const resetLink = `${frontendUrl}/auth/reset-password?token=${token}`;
 
     await this.mail.sendPasswordReset(email, resetLink);
@@ -67,7 +70,10 @@ export class AuthService {
     return { message: genericMessage };
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.users.findByResetToken(token);
     if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
       throw new BadRequestException(
@@ -125,4 +131,3 @@ export class AuthService {
     };
   }
 }
-

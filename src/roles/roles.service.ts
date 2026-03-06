@@ -34,8 +34,11 @@ export class RolesService {
   }
 
   async create(data: { name: string; description?: string }) {
-    const existing = await this.roleRepo.findOne({ where: { name: data.name } });
-    if (existing) throw new ConflictException(`Role "${data.name}" already exists`);
+    const existing = await this.roleRepo.findOne({
+      where: { name: data.name },
+    });
+    if (existing)
+      throw new ConflictException(`Role "${data.name}" already exists`);
     const role = this.roleRepo.create(data);
     return this.roleRepo.save(role);
   }
@@ -46,7 +49,8 @@ export class RolesService {
       const clash = await this.roleRepo.findOne({
         where: { name: data.name, id: Not(id) },
       });
-      if (clash) throw new ConflictException(`Role "${data.name}" already exists`);
+      if (clash)
+        throw new ConflictException(`Role "${data.name}" already exists`);
     }
     await this.roleRepo.update(id, data);
     return this.findOne(id);

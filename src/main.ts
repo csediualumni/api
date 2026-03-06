@@ -17,6 +17,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1', { exclude: ['/health'] });
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`API running on http://localhost:${process.env.PORT ?? 3000}/api/v1`);
+  console.log(
+    `API running on http://localhost:${process.env.PORT ?? 3000}/api/v1`,
+  );
 }
 bootstrap();

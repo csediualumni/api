@@ -9,7 +9,15 @@ import { UserEducation } from '../entities/user-education.entity';
 import { UserAchievement } from '../entities/user-achievement.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserRole, UserExperience, UserEducation, UserAchievement])],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      UserRole,
+      UserExperience,
+      UserEducation,
+      UserAchievement,
+    ]),
+  ],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],

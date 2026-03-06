@@ -22,6 +22,10 @@ export const PERMISSIONS = {
   // Invoice management
   INVOICES_READ: 'invoices:read',
   INVOICES_WRITE: 'invoices:write',
+
+  // Newsletter management
+  NEWSLETTER_READ: 'newsletter:read',
+  NEWSLETTER_WRITE: 'newsletter:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -32,15 +36,45 @@ export const ALL_PERMISSIONS: {
   description: string;
   group: string;
 }[] = [
-  { key: 'users:read',        description: 'View user list',              group: 'Users' },
-  { key: 'users:write',       description: 'Create or update users',      group: 'Users' },
-  { key: 'users:delete',      description: 'Delete users',                group: 'Users' },
-  { key: 'users:assign_role', description: 'Assign/remove roles on users', group: 'Users' },
-  { key: 'roles:read',        description: 'View roles list',             group: 'Roles' },
-  { key: 'roles:write',       description: 'Create or update roles',      group: 'Roles' },
-  { key: 'roles:delete',      description: 'Delete roles',                group: 'Roles' },
-  { key: 'permissions:read',  description: 'View permissions list',       group: 'Permissions' },
-  { key: 'permissions:assign', description: 'Assign permissions to roles', group: 'Permissions' },
-  { key: 'invoices:read',     description: 'View all invoices & payments', group: 'Invoices' },
-  { key: 'invoices:write',    description: 'Manage invoice & payment status, issue refunds', group: 'Invoices' },
+  { key: 'users:read', description: 'View user list', group: 'Users' },
+  { key: 'users:write', description: 'Create or update users', group: 'Users' },
+  { key: 'users:delete', description: 'Delete users', group: 'Users' },
+  {
+    key: 'users:assign_role',
+    description: 'Assign/remove roles on users',
+    group: 'Users',
+  },
+  { key: 'roles:read', description: 'View roles list', group: 'Roles' },
+  { key: 'roles:write', description: 'Create or update roles', group: 'Roles' },
+  { key: 'roles:delete', description: 'Delete roles', group: 'Roles' },
+  {
+    key: 'permissions:read',
+    description: 'View permissions list',
+    group: 'Permissions',
+  },
+  {
+    key: 'permissions:assign',
+    description: 'Assign permissions to roles',
+    group: 'Permissions',
+  },
+  {
+    key: 'invoices:read',
+    description: 'View all invoices & payments',
+    group: 'Invoices',
+  },
+  {
+    key: 'invoices:write',
+    description: 'Manage invoice & payment status, issue refunds',
+    group: 'Invoices',
+  },
+  {
+    key: 'newsletter:read',
+    description: 'View newsletter subscriptions',
+    group: 'Newsletter',
+  },
+  {
+    key: 'newsletter:write',
+    description: 'Manage subscriptions and send newsletter emails',
+    group: 'Newsletter',
+  },
 ];

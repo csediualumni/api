@@ -56,10 +56,14 @@ export type UserWithPermissions = SafeUser & {
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    @InjectRepository(UserRole) private readonly userRoleRepo: Repository<UserRole>,
-    @InjectRepository(UserExperience) private readonly expRepo: Repository<UserExperience>,
-    @InjectRepository(UserEducation) private readonly eduRepo: Repository<UserEducation>,
-    @InjectRepository(UserAchievement) private readonly achRepo: Repository<UserAchievement>,
+    @InjectRepository(UserRole)
+    private readonly userRoleRepo: Repository<UserRole>,
+    @InjectRepository(UserExperience)
+    private readonly expRepo: Repository<UserExperience>,
+    @InjectRepository(UserEducation)
+    private readonly eduRepo: Repository<UserEducation>,
+    @InjectRepository(UserAchievement)
+    private readonly achRepo: Repository<UserAchievement>,
   ) {}
 
   // ── Finders ─────────────────────────────────────────────────
@@ -130,7 +134,10 @@ export class UsersService {
 
   // ── Creators ─────────────────────────────────────────────────
 
-  async createWithPassword(email: string, hashedPassword: string): Promise<User> {
+  async createWithPassword(
+    email: string,
+    hashedPassword: string,
+  ): Promise<User> {
     const user = this.userRepo.create({ email, password: hashedPassword });
     return this.userRepo.save(user);
   }
@@ -164,12 +171,19 @@ export class UsersService {
 
   // ── Experience CRUD ────────────────────────────────────────
 
-  async addExperience(userId: string, dto: UpsertExperienceDto): Promise<UserExperience> {
+  async addExperience(
+    userId: string,
+    dto: UpsertExperienceDto,
+  ): Promise<UserExperience> {
     const entry = this.expRepo.create({ ...dto, userId });
     return this.expRepo.save(entry);
   }
 
-  async updateExperience(userId: string, id: string, dto: UpsertExperienceDto): Promise<UserExperience> {
+  async updateExperience(
+    userId: string,
+    id: string,
+    dto: UpsertExperienceDto,
+  ): Promise<UserExperience> {
     const entry = await this.expRepo.findOne({ where: { id, userId } });
     if (!entry) throw new NotFoundException('Experience entry not found');
     await this.expRepo.save({ ...entry, ...dto });
@@ -184,12 +198,23 @@ export class UsersService {
 
   // ── Education CRUD ─────────────────────────────────────────
 
-  async addEducation(userId: string, dto: UpsertEducationDto): Promise<UserEducation> {
-    const entry = this.eduRepo.create({ ...dto, year: dto.year ?? null, userId });
+  async addEducation(
+    userId: string,
+    dto: UpsertEducationDto,
+  ): Promise<UserEducation> {
+    const entry = this.eduRepo.create({
+      ...dto,
+      year: dto.year ?? null,
+      userId,
+    });
     return this.eduRepo.save(entry);
   }
 
-  async updateEducation(userId: string, id: string, dto: UpsertEducationDto): Promise<UserEducation> {
+  async updateEducation(
+    userId: string,
+    id: string,
+    dto: UpsertEducationDto,
+  ): Promise<UserEducation> {
     const entry = await this.eduRepo.findOne({ where: { id, userId } });
     if (!entry) throw new NotFoundException('Education entry not found');
     await this.eduRepo.save({ ...entry, ...dto, year: dto.year ?? null });
@@ -204,12 +229,19 @@ export class UsersService {
 
   // ── Achievement CRUD ───────────────────────────────────────
 
-  async addAchievement(userId: string, dto: UpsertAchievementDto): Promise<UserAchievement> {
+  async addAchievement(
+    userId: string,
+    dto: UpsertAchievementDto,
+  ): Promise<UserAchievement> {
     const entry = this.achRepo.create({ ...dto, userId });
     return this.achRepo.save(entry);
   }
 
-  async updateAchievement(userId: string, id: string, dto: UpsertAchievementDto): Promise<UserAchievement> {
+  async updateAchievement(
+    userId: string,
+    id: string,
+    dto: UpsertAchievementDto,
+  ): Promise<UserAchievement> {
     const entry = await this.achRepo.findOne({ where: { id, userId } });
     if (!entry) throw new NotFoundException('Achievement entry not found');
     await this.achRepo.save({ ...entry, ...dto });
@@ -227,7 +259,9 @@ export class UsersService {
   async setRoles(userId: string, roleIds: string[]): Promise<SafeUser> {
     await this.userRoleRepo.delete({ userId });
     if (roleIds.length > 0) {
-      await this.userRoleRepo.save(roleIds.map((roleId) => ({ userId, roleId })));
+      await this.userRoleRepo.save(
+        roleIds.map((roleId) => ({ userId, roleId })),
+      );
     }
     const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
     const { password: _pw, ...safe } = user;
@@ -250,8 +284,15 @@ export class UsersService {
 
   // ── Password reset ───────────────────────────────────────────
 
-  async setResetToken(userId: string, token: string, expiry: Date): Promise<void> {
-    await this.userRepo.update(userId, { resetToken: token, resetTokenExpiry: expiry });
+  async setResetToken(
+    userId: string,
+    token: string,
+    expiry: Date,
+  ): Promise<void> {
+    await this.userRepo.update(userId, {
+      resetToken: token,
+      resetTokenExpiry: expiry,
+    });
   }
 
   findByResetToken(token: string): Promise<User | null> {
@@ -269,8 +310,7 @@ export class UsersService {
   // ── Public directory ────────────────────────────────────────
 
   async findPublicAlumni(): Promise<PublicAlumnusDto[]> {
-    const adminEmail =
-      process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';
+    const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';
     const users = await this.userRepo.find({
       where: { email: Not(adminEmail) },
       relations: { experiences: true, educations: true, achievements: true },
@@ -339,9 +379,19 @@ export interface PublicAlumnusDto {
   website: string | null;
   openToMentoring: boolean;
   skills: string[] | null;
-  experiences: { id: string; title: string; company: string; from: string; to: string }[];
-  educations: { id: string; degree: string; institution: string; year: number | null }[];
+  experiences: {
+    id: string;
+    title: string;
+    company: string;
+    from: string;
+    to: string;
+  }[];
+  educations: {
+    id: string;
+    degree: string;
+    institution: string;
+    year: number | null;
+  }[];
   achievements: { id: string; title: string }[];
   createdAt: Date;
 }
-

@@ -96,7 +96,12 @@ export class AuthController {
     const jwtUser = req.user as { id: string };
     const user = await this.users.findByIdWithProfile(jwtUser.id);
     if (!user) return jwtUser;
-    const { password: _pw, resetToken: _rt, resetTokenExpiry: _rte, ...profile } = user;
+    const {
+      password: _pw,
+      resetToken: _rt,
+      resetTokenExpiry: _rte,
+      ...profile
+    } = user;
     return profile;
   }
 

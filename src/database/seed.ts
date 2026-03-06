@@ -7,13 +7,31 @@ import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
 import { UserRole } from '../entities/user-role.entity';
 import { RolePermission } from '../entities/role-permission.entity';
+import { UserExperience } from '../entities/user-experience.entity';
+import { UserEducation } from '../entities/user-education.entity';
+import { UserAchievement } from '../entities/user-achievement.entity';
+import { Invoice } from '../entities/invoice.entity';
+import { InvoicePayment } from '../entities/invoice-payment.entity';
+import { NewsletterSubscription } from '../entities/newsletter-subscription.entity';
 import { ALL_PERMISSIONS } from '../auth/permissions.constants';
 
 const ds = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  entities: [User, Role, Permission, UserRole, RolePermission],
+  entities: [
+    User,
+    Role,
+    Permission,
+    UserRole,
+    RolePermission,
+    UserExperience,
+    UserEducation,
+    UserAchievement,
+    Invoice,
+    InvoicePayment,
+    NewsletterSubscription,
+  ],
   synchronize: true,
 });
 
@@ -44,15 +62,36 @@ async function main() {
   const allPerms = await permRepo.find();
   const perm = (key: string) => allPerms.find((p) => p.key === key)!;
 
-  const superAdminRole = await upsertRole(roleRepo, rolePermRepo, 'super_admin', 'Full system access', true, allPerms.map((p) => p.id));
-  await upsertRole(roleRepo, rolePermRepo, 'admin', 'Manage users and roles', true, [
-    perm('users:read').id,
-    perm('users:write').id,
-    perm('users:assign_role').id,
-    perm('roles:read').id,
-    perm('permissions:read').id,
-  ]);
-  await upsertRole(roleRepo, rolePermRepo, 'member', 'Regular member — no admin access', true, []);
+  const superAdminRole = await upsertRole(
+    roleRepo,
+    rolePermRepo,
+    'super_admin',
+    'Full system access',
+    true,
+    allPerms.map((p) => p.id),
+  );
+  await upsertRole(
+    roleRepo,
+    rolePermRepo,
+    'admin',
+    'Manage users and roles',
+    true,
+    [
+      perm('users:read').id,
+      perm('users:write').id,
+      perm('users:assign_role').id,
+      perm('roles:read').id,
+      perm('permissions:read').id,
+    ],
+  );
+  await upsertRole(
+    roleRepo,
+    rolePermRepo,
+    'member',
+    'Regular member — no admin access',
+    true,
+    [],
+  );
 
   console.log(`  ✓ Roles: super_admin, admin, member`);
 
@@ -61,7 +100,9 @@ async function main() {
   const rawPassword = process.env.ADMIN_PASSWORD;
 
   if (!rawPassword) {
-    throw new Error('ADMIN_PASSWORD is not set in .env — cannot seed super admin.');
+    throw new Error(
+      'ADMIN_PASSWORD is not set in .env — cannot seed super admin.',
+    );
   }
 
   console.log(`▶ Seeding super admin user (${email})…`);
@@ -69,9 +110,20 @@ async function main() {
 
   let admin = await userRepo.findOne({ where: { email } });
   if (admin) {
-    await userRepo.save({ ...admin, password: hashed, displayName: 'System Admin' });
+    await userRepo.save({
+      ...admin,
+      password: hashed,
+      displayName: 'System Admin',
+    });
   } else {
-    admin = await userRepo.save(userRepo.create({ id: uuidv4(), email, password: hashed, displayName: 'System Admin' }));
+    admin = await userRepo.save(
+      userRepo.create({
+        id: uuidv4(),
+        email,
+        password: hashed,
+        displayName: 'System Admin',
+      }),
+    );
   }
   admin = await userRepo.findOneOrFail({ where: { email } });
 
@@ -93,13 +145,17 @@ async function upsertRole(
   if (role) {
     await roleRepo.save({ ...role, description, isSystem });
   } else {
-    role = await roleRepo.save(roleRepo.create({ id: uuidv4(), name, description, isSystem }));
+    role = await roleRepo.save(
+      roleRepo.create({ id: uuidv4(), name, description, isSystem }),
+    );
   }
   role = await roleRepo.findOneOrFail({ where: { name } });
 
   await rolePermRepo.delete({ roleId: role.id });
   if (permissionIds.length > 0) {
-    await rolePermRepo.save(permissionIds.map((permissionId) => ({ roleId: role.id, permissionId })));
+    await rolePermRepo.save(
+      permissionIds.map((permissionId) => ({ roleId: role.id, permissionId })),
+    );
   }
   return role;
 }
