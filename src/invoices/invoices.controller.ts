@@ -14,6 +14,7 @@ import {
 import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions.constants';
@@ -71,6 +72,7 @@ export class InvoicesController {
   // ── Public: create invoice (optionally authenticated) ─────────
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(OptionalJwtAuthGuard)
   create(@Body() dto: CreateInvoiceDto, @Request() req: any) {
     const userId: string | undefined = req.user?.id;
     return this.invoices.create({
