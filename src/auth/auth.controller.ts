@@ -39,6 +39,18 @@ export class AuthController {
     return this.auth.login(body.email, body.password);
   }
 
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() body: { email: string }) {
+    return this.auth.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() body: { token: string; password: string }) {
+    return this.auth.resetPassword(body.token, body.password);
+  }
+
   // ──────────────────────────────────────────────
   // Google OAuth
   // ──────────────────────────────────────────────

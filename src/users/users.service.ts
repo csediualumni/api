@@ -121,5 +121,23 @@ export class UsersService {
     const { password: _pw, ...safe } = user;
     return safe as SafeUser;
   }
+
+  // ── Password reset ───────────────────────────────────────────
+
+  async setResetToken(userId: string, token: string, expiry: Date): Promise<void> {
+    await this.userRepo.update(userId, { resetToken: token, resetTokenExpiry: expiry });
+  }
+
+  findByResetToken(token: string): Promise<User | null> {
+    return this.userRepo.findOne({ where: { resetToken: token } });
+  }
+
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await this.userRepo.update(userId, {
+      password: hashedPassword,
+      resetToken: null,
+      resetTokenExpiry: null,
+    });
+  }
 }
 

@@ -35,6 +35,12 @@ export class User {
   @Column({ nullable: true, type: 'varchar' })
   avatar: string | null;
 
+  @Column({ name: 'reset_token', nullable: true, type: 'varchar' })
+  resetToken: string | null;
+
+  @Column({ name: 'reset_token_expiry', nullable: true, type: 'timestamptz' })
+  resetTokenExpiry: Date | null;
+
   @OneToMany(() => UserRole, (ur) => ur.user)
   userRoles: UserRole[];
 
