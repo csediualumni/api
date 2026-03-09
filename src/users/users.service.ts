@@ -336,6 +336,45 @@ export class UsersService {
     });
   }
 
+  // ── Public stats ────────────────────────────────────────────
+
+  async getStats(): Promise<{
+    alumniCount: number;
+    batchCount: number;
+    countryCount: number;
+    eventsHosted: number;
+  }> {
+    const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';
+
+    const [alumniCount, batchResult, countryResult] = await Promise.all([
+      this.userRepo.count({ where: { email: Not(adminEmail) } }),
+      this.userRepo
+        .createQueryBuilder('u')
+        .select('COUNT(DISTINCT u.batch)', 'count')
+        .where('u.email != :admin', { admin: adminEmail })
+        .andWhere('u.batch IS NOT NULL')
+        .getRawOne<{ count: string }>(),
+      this.userRepo
+        .createQueryBuilder('u')
+        .select('COUNT(DISTINCT u.country)', 'count')
+        .where('u.email != :admin', { admin: adminEmail })
+        .andWhere('u.country IS NOT NULL')
+        .getRawOne<{ count: string }>(),
+    ]);
+
+    const eventsHosted = parseInt(
+      process.env.STAT_EVENTS_HOSTED ?? '200',
+      10,
+    );
+
+    return {
+      alumniCount,
+      batchCount: parseInt(batchResult?.count ?? '0', 10),
+      countryCount: parseInt(countryResult?.count ?? '0', 10),
+      eventsHosted,
+    };
+  }
+
   // ── Public directory ────────────────────────────────────────
 
   async findPublicAlumni(): Promise<PublicAlumnusDto[]> {

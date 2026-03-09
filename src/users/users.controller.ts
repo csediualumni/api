@@ -10,4 +10,10 @@ export class UsersController {
   listPublic() {
     return this.users.findPublicAlumni();
   }
+
+  /** Real-time platform statistics (alumni count, batches, countries, events) */
+  @Get('stats')
+  getStats() {
+    return this.users.getStats();
+  }
 }
