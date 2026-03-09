@@ -26,6 +26,8 @@ import { UserAchievement } from './entities/user-achievement.entity';
 import { NewsletterSubscription } from './entities/newsletter-subscription.entity';
 import { MembershipApplication } from './entities/membership-application.entity';
 import { MembershipModule } from './membership/membership.module';
+import { MilestonesModule } from './milestones/milestones.module';
+import { Milestone } from './entities/milestone.entity';
 
 @Module({
   imports: [
@@ -50,6 +52,7 @@ import { MembershipModule } from './membership/membership.module';
           ContactTicket,
           ContactTicketComment,
           MembershipApplication,
+          Milestone,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -64,6 +67,7 @@ import { MembershipModule } from './membership/membership.module';
     NewsletterModule,
     ContactModule,
     MembershipModule,
+    MilestonesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

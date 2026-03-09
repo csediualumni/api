@@ -39,6 +39,10 @@ export const PERMISSIONS = {
   // Profile management
   PROFILE_READ: 'profile:read',
   PROFILE_WRITE: 'profile:write',
+
+  // Milestone management (About page history)
+  MILESTONES_READ: 'milestones:read',
+  MILESTONES_WRITE: 'milestones:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -124,5 +128,15 @@ export const ALL_PERMISSIONS: {
     key: 'profile:write',
     description: 'Edit own profile',
     group: 'Profile',
+  },
+  {
+    key: 'milestones:read',
+    description: 'View history milestones',
+    group: 'Milestones',
+  },
+  {
+    key: 'milestones:write',
+    description: 'Create, update and delete history milestones',
+    group: 'Milestones',
   },
 ];

@@ -17,6 +17,7 @@ import { PERMISSIONS } from '../auth/permissions.constants';
 import { UsersService } from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
+import { MilestonesService, CreateMilestoneDto, UpdateMilestoneDto } from '../milestones/milestones.service';
 import { IsArray, IsString, IsNotEmpty, IsIn } from 'class-validator';
 
 class SetRolesDto {
@@ -44,6 +45,7 @@ export class AdminController {
     private readonly users: UsersService,
     private readonly newsletter: NewsletterService,
     private readonly contact: ContactService,
+    private readonly milestonesService: MilestonesService,
   ) {}
 
   // ── Users ──────────────────────────────────────────────────
@@ -136,5 +138,32 @@ export class AdminController {
   @RequirePermissions(PERMISSIONS.CONTACT_WRITE)
   deleteTicket(@Param('id') id: string) {
     return this.contact.remove(id);
+  }
+
+  // ── Milestones ─────────────────────────────────────────────
+
+  @Get('milestones')
+  @RequirePermissions(PERMISSIONS.MILESTONES_READ)
+  listMilestones() {
+    return this.milestonesService.findAll();
+  }
+
+  @Post('milestones')
+  @RequirePermissions(PERMISSIONS.MILESTONES_WRITE)
+  createMilestone(@Body() dto: CreateMilestoneDto) {
+    return this.milestonesService.create(dto);
+  }
+
+  @Patch('milestones/:id')
+  @RequirePermissions(PERMISSIONS.MILESTONES_WRITE)
+  updateMilestone(@Param('id') id: string, @Body() dto: UpdateMilestoneDto) {
+    return this.milestonesService.update(id, dto);
+  }
+
+  @Delete('milestones/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.MILESTONES_WRITE)
+  deleteMilestone(@Param('id') id: string) {
+    return this.milestonesService.remove(id);
   }
 }
