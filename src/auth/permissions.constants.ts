@@ -43,6 +43,10 @@ export const PERMISSIONS = {
   // Milestone management (About page history)
   MILESTONES_READ: 'milestones:read',
   MILESTONES_WRITE: 'milestones:write',
+
+  // Committee management
+  COMMITTEES_READ: 'committees:read',
+  COMMITTEES_WRITE: 'committees:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -138,5 +142,15 @@ export const ALL_PERMISSIONS: {
     key: 'milestones:write',
     description: 'Create, update and delete history milestones',
     group: 'Milestones',
+  },
+  {
+    key: 'committees:read',
+    description: 'View all committees and members',
+    group: 'Committees',
+  },
+  {
+    key: 'committees:write',
+    description: 'Create, update and delete committees and members',
+    group: 'Committees',
   },
 ];

@@ -28,6 +28,9 @@ import { MembershipApplication } from './entities/membership-application.entity'
 import { MembershipModule } from './membership/membership.module';
 import { MilestonesModule } from './milestones/milestones.module';
 import { Milestone } from './entities/milestone.entity';
+import { CommitteesModule } from './committees/committees.module';
+import { Committee } from './entities/committee.entity';
+import { CommitteeMember } from './entities/committee-member.entity';
 
 @Module({
   imports: [
@@ -53,6 +56,8 @@ import { Milestone } from './entities/milestone.entity';
           ContactTicketComment,
           MembershipApplication,
           Milestone,
+          Committee,
+          CommitteeMember,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -68,6 +73,7 @@ import { Milestone } from './entities/milestone.entity';
     ContactModule,
     MembershipModule,
     MilestonesModule,
+    CommitteesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -18,6 +18,7 @@ import { UsersService } from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
 import { MilestonesService, CreateMilestoneDto, UpdateMilestoneDto } from '../milestones/milestones.service';
+import { CommitteesService, CreateCommitteeDto, UpdateCommitteeDto, AddCommitteeMemberDto, UpdateCommitteeMemberDto } from '../committees/committees.service';
 import { IsArray, IsString, IsNotEmpty, IsIn } from 'class-validator';
 
 class SetRolesDto {
@@ -46,6 +47,7 @@ export class AdminController {
     private readonly newsletter: NewsletterService,
     private readonly contact: ContactService,
     private readonly milestonesService: MilestonesService,
+    private readonly committeesService: CommitteesService,
   ) {}
 
   // ── Users ──────────────────────────────────────────────────
@@ -165,5 +167,51 @@ export class AdminController {
   @RequirePermissions(PERMISSIONS.MILESTONES_WRITE)
   deleteMilestone(@Param('id') id: string) {
     return this.milestonesService.remove(id);
+  }
+
+  // ── Committees ──────────────────────────────────────────
+
+  @Get('committees')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_READ)
+  listCommittees() {
+    return this.committeesService.findAll();
+  }
+
+  @Post('committees')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  createCommittee(@Body() dto: CreateCommitteeDto) {
+    return this.committeesService.create(dto);
+  }
+
+  @Patch('committees/:id')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  updateCommittee(@Param('id') id: string, @Body() dto: UpdateCommitteeDto) {
+    return this.committeesService.update(id, dto);
+  }
+
+  @Delete('committees/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  deleteCommittee(@Param('id') id: string) {
+    return this.committeesService.remove(id);
+  }
+
+  @Post('committees/:id/members')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  addCommitteeMember(@Param('id') id: string, @Body() dto: AddCommitteeMemberDto) {
+    return this.committeesService.addMember(id, dto);
+  }
+
+  @Patch('committees/members/:memberId')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  updateCommitteeMember(@Param('memberId') memberId: string, @Body() dto: UpdateCommitteeMemberDto) {
+    return this.committeesService.updateMember(memberId, dto);
+  }
+
+  @Delete('committees/members/:memberId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  removeCommitteeMember(@Param('memberId') memberId: string) {
+    return this.committeesService.removeMember(memberId);
   }
 }
