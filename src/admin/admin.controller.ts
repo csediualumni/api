@@ -24,6 +24,8 @@ import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
 import { MilestonesService, CreateMilestoneDto, UpdateMilestoneDto } from '../milestones/milestones.service';
 import { CommitteesService, CreateCommitteeDto, UpdateCommitteeDto, AddCommitteeMemberDto, UpdateCommitteeMemberDto, SetDesignationMappingDto } from '../committees/committees.service';
+import { EventsService, CreateEventDto, UpdateEventDto } from '../events/events.service';
+import { UploadService } from '../upload/upload.service';
 import { IsArray, IsString, IsNotEmpty, IsIn, IsUUID } from 'class-validator';
 
 class UpdateDesignationMappingDto {
@@ -57,7 +59,40 @@ export class AdminController {
     private readonly contact: ContactService,
     private readonly milestonesService: MilestonesService,
     private readonly committeesService: CommitteesService,
+    private readonly eventsService: EventsService,
+    private readonly uploadService: UploadService,
   ) {}
+
+  // ── Image upload ──────────────────────────────────────────
+
+  @Post('upload/image')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file uploaded');
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.mimetype))
+      throw new BadRequestException('Only JPEG, PNG, WebP and GIF images are allowed');
+
+    const maxBytes = 5 * 1024 * 1024; // 5 MB
+    if (file.size > maxBytes)
+      throw new BadRequestException('Image must be smaller than 5 MB');
+
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+    };
+    const url = await this.uploadService.uploadFile(
+      file.buffer,
+      file.mimetype,
+      extMap[file.mimetype],
+      'events',
+    );
+    return { url };
+  }
 
   // ── Users ──────────────────────────────────────────────────
 
@@ -263,5 +298,38 @@ export class AdminController {
   @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
   removeDesignationMapping(@Param('id') id: string) {
     return this.committeesService.removeMapping(id);
+  }
+
+  // ── Events ──────────────────────────────────────────
+
+  @Get('events')
+  @RequirePermissions(PERMISSIONS.EVENTS_READ)
+  listEvents() {
+    return this.eventsService.findAll();
+  }
+
+  @Post('events')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  createEvent(@Body() dto: CreateEventDto) {
+    return this.eventsService.create(dto);
+  }
+
+  @Patch('events/:id')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  updateEvent(@Param('id') id: string, @Body() dto: UpdateEventDto) {
+    return this.eventsService.update(id, dto);
+  }
+
+  @Delete('events/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  deleteEvent(@Param('id') id: string) {
+    return this.eventsService.remove(id);
+  }
+
+  @Get('events/:id/rsvps')
+  @RequirePermissions(PERMISSIONS.EVENTS_READ)
+  listEventRsvps(@Param('id') id: string) {
+    return this.eventsService.listRsvps(id);
   }
 }

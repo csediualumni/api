@@ -47,6 +47,10 @@ export const PERMISSIONS = {
   // Committee management
   COMMITTEES_READ: 'committees:read',
   COMMITTEES_WRITE: 'committees:write',
+
+  // Events management
+  EVENTS_READ: 'events:read',
+  EVENTS_WRITE: 'events:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -152,5 +156,15 @@ export const ALL_PERMISSIONS: {
     key: 'committees:write',
     description: 'Create, update and delete committees and members',
     group: 'Committees',
+  },
+  {
+    key: 'events:read',
+    description: 'View all events and RSVP lists',
+    group: 'Events',
+  },
+  {
+    key: 'events:write',
+    description: 'Create, update and delete events',
+    group: 'Events',
   },
 ];

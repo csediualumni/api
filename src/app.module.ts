@@ -32,6 +32,9 @@ import { CommitteesModule } from './committees/committees.module';
 import { Committee } from './entities/committee.entity';
 import { CommitteeMember } from './entities/committee-member.entity';
 import { DesignationRoleMapping } from './entities/designation-role-mapping.entity';
+import { EventsModule } from './events/events.module';
+import { Event } from './entities/event.entity';
+import { EventRsvp } from './entities/event-rsvp.entity';
 
 @Module({
   imports: [
@@ -60,6 +63,8 @@ import { DesignationRoleMapping } from './entities/designation-role-mapping.enti
           Committee,
           CommitteeMember,
           DesignationRoleMapping,
+          Event,
+          EventRsvp,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -76,6 +81,7 @@ import { DesignationRoleMapping } from './entities/designation-role-mapping.enti
     MembershipModule,
     MilestonesModule,
     CommitteesModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

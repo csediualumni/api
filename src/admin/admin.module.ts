@@ -5,9 +5,11 @@ import { NewsletterModule } from '../newsletter/newsletter.module';
 import { ContactModule } from '../contact/contact.module';
 import { MilestonesModule } from '../milestones/milestones.module';
 import { CommitteesModule } from '../committees/committees.module';
+import { EventsModule } from '../events/events.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
-  imports: [UsersModule, NewsletterModule, ContactModule, MilestonesModule, CommitteesModule],
+  imports: [UsersModule, NewsletterModule, ContactModule, MilestonesModule, CommitteesModule, EventsModule, UploadModule],
   controllers: [AdminController],
 })
 export class AdminModule {}
