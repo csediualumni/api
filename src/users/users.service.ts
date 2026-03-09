@@ -7,6 +7,7 @@ import { Role } from '../entities/role.entity';
 import { UserExperience } from '../entities/user-experience.entity';
 import { UserEducation } from '../entities/user-education.entity';
 import { UserAchievement } from '../entities/user-achievement.entity';
+import { Event } from '../entities/event.entity';
 
 export type SafeUser = Omit<User, 'password' | 'generateId'>;
 
@@ -93,6 +94,8 @@ export class UsersService {
     private readonly eduRepo: Repository<UserEducation>,
     @InjectRepository(UserAchievement)
     private readonly achRepo: Repository<UserAchievement>,
+    @InjectRepository(Event)
+    private readonly eventRepo: Repository<Event>,
   ) {}
 
   // ── Finders ─────────────────────────────────────────────────
@@ -444,26 +447,23 @@ export class UsersService {
   }> {
     const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';
 
-    const [alumniCount, batchResult, countryResult] = await Promise.all([
-      this.userRepo.count({ where: { email: Not(adminEmail) } }),
-      this.userRepo
-        .createQueryBuilder('u')
-        .select('COUNT(DISTINCT u.batch)', 'count')
-        .where('u.email != :admin', { admin: adminEmail })
-        .andWhere('u.batch IS NOT NULL')
-        .getRawOne<{ count: string }>(),
-      this.userRepo
-        .createQueryBuilder('u')
-        .select('COUNT(DISTINCT u.country)', 'count')
-        .where('u.email != :admin', { admin: adminEmail })
-        .andWhere('u.country IS NOT NULL')
-        .getRawOne<{ count: string }>(),
-    ]);
-
-    const eventsHosted = parseInt(
-      process.env.STAT_EVENTS_HOSTED ?? '200',
-      10,
-    );
+    const [alumniCount, batchResult, countryResult, eventsHosted] =
+      await Promise.all([
+        this.userRepo.count({ where: { email: Not(adminEmail) } }),
+        this.userRepo
+          .createQueryBuilder('u')
+          .select('COUNT(DISTINCT u.batch)', 'count')
+          .where('u.email != :admin', { admin: adminEmail })
+          .andWhere('u.batch IS NOT NULL')
+          .getRawOne<{ count: string }>(),
+        this.userRepo
+          .createQueryBuilder('u')
+          .select('COUNT(DISTINCT u.country)', 'count')
+          .where('u.email != :admin', { admin: adminEmail })
+          .andWhere('u.country IS NOT NULL')
+          .getRawOne<{ count: string }>(),
+        this.eventRepo.count(),
+      ]);
 
     return {
       alumniCount,

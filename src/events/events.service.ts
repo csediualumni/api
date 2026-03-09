@@ -18,6 +18,15 @@ import {
 import { Event } from '../entities/event.entity';
 import type { EventMode, EventStatus } from '../entities/event.entity';
 import { EventRsvp } from '../entities/event-rsvp.entity';
+import { Invoice } from '../entities/invoice.entity';
+
+/** Returns how many full days remain until `eventDate` from now (can be negative). */
+function daysUntil(eventDate: Date): number {
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.floor((eventDate.getTime() - Date.now()) / msPerDay);
+}
+
+const PAID_EVENT_CUTOFF_DAYS = 7;
 
 const VALID_MODES: EventMode[] = ['In-Person', 'Online', 'Hybrid'];
 const VALID_STATUSES: EventStatus[] = ['upcoming', 'ongoing', 'past'];
@@ -38,6 +47,8 @@ export class CreateEventDto {
   @IsOptional() @IsBoolean() featured?: boolean;
   @IsOptional() @IsString() registrationUrl?: string | null;
   @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+  /** Ticket price in BDT. Omit or set to 0 for free events. */
+  @IsOptional() @IsInt() @Min(0) ticketPrice?: number | null;
 }
 
 export class UpdateEventDto {
@@ -56,6 +67,8 @@ export class UpdateEventDto {
   @IsOptional() @IsBoolean() featured?: boolean;
   @IsOptional() @IsString() registrationUrl?: string | null;
   @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+  /** Ticket price in BDT. Omit or set to 0 for free events. */
+  @IsOptional() @IsInt() @Min(0) ticketPrice?: number | null;
 }
 
 export type EventWithMeta = Event & { rsvpCount: number; seatsLeft: number | null };
@@ -67,6 +80,8 @@ export class EventsService {
     private readonly eventRepo: Repository<Event>,
     @InjectRepository(EventRsvp)
     private readonly rsvpRepo: Repository<EventRsvp>,
+    @InjectRepository(Invoice)
+    private readonly invoiceRepo: Repository<Invoice>,
   ) {}
 
   // ── Helpers ──────────────────────────────────────────────────────────
@@ -129,6 +144,7 @@ export class EventsService {
       featured: dto.featured ?? false,
       registrationUrl: dto.registrationUrl ?? null,
       sortOrder: dto.sortOrder ?? 0,
+      ticketPrice: dto.ticketPrice ?? null,
     });
     const saved = await this.eventRepo.save(event);
     const [enriched] = await this.attachMeta([saved]);
@@ -154,6 +170,7 @@ export class EventsService {
     if (dto.featured !== undefined) event.featured = dto.featured;
     if (dto.registrationUrl !== undefined) event.registrationUrl = dto.registrationUrl;
     if (dto.sortOrder !== undefined) event.sortOrder = dto.sortOrder;
+    if (dto.ticketPrice !== undefined) event.ticketPrice = dto.ticketPrice ?? null;
 
     const saved = await this.eventRepo.save(event);
     const [enriched] = await this.attachMeta([saved]);
@@ -171,7 +188,7 @@ export class EventsService {
   async rsvp(
     eventId: string,
     userId: string,
-  ): Promise<{ message: string; rsvp: EventRsvp }> {
+  ): Promise<{ message: string; rsvp: EventRsvp; invoiceId?: string; paymentUrl?: string }> {
     const event = await this.eventRepo.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found.');
 
@@ -179,15 +196,58 @@ export class EventsService {
       throw new BadRequestException('Registration is closed for this event.');
     }
 
+    const isPaidEvent = event.ticketPrice !== null && event.ticketPrice > 0;
+
+    // Paid events: registration closes PAID_EVENT_CUTOFF_DAYS before the event
+    if (isPaidEvent && daysUntil(event.date) < PAID_EVENT_CUTOFF_DAYS) {
+      throw new BadRequestException(
+        `Registration for paid events closes ${PAID_EVENT_CUTOFF_DAYS} days before the event.`,
+      );
+    }
+
     const existing = await this.rsvpRepo.findOne({
       where: { eventId, userId },
     });
 
-    if (existing && existing.status === 'registered') {
+    if (existing && (existing.status === 'registered' || existing.status === 'pending_payment')) {
       throw new BadRequestException('You are already registered for this event.');
     }
 
-    // Capacity check
+    // ── Paid event path ──────────────────────────────────────────────────────
+    if (isPaidEvent) {
+      // Create an invoice for the ticket
+      const invoice = this.invoiceRepo.create({
+        type: 'event',
+        description: `Ticket: ${event.title}`,
+        totalAmount: event.ticketPrice!,
+        status: 'pending',
+        userId,
+        metadata: { eventId: event.id, eventTitle: event.title },
+      });
+      const savedInvoice = await this.invoiceRepo.save(invoice);
+
+      // Create or reactivate RSVP as pending_payment (no seat held)
+      let rsvp: EventRsvp;
+      if (existing) {
+        existing.status = 'pending_payment';
+        existing.invoiceId = savedInvoice.id;
+        rsvp = await this.rsvpRepo.save(existing);
+      } else {
+        rsvp = await this.rsvpRepo.save(
+          this.rsvpRepo.create({ eventId, userId, status: 'pending_payment', invoiceId: savedInvoice.id }),
+        );
+      }
+
+      return {
+        message: 'Invoice created. Please complete payment to confirm your seat.',
+        rsvp,
+        invoiceId: savedInvoice.id,
+        paymentUrl: `/payment?invoiceId=${savedInvoice.id}`,
+      };
+    }
+
+    // ── Free event path ──────────────────────────────────────────────────────
+    // Capacity check (only enforce for confirmed registrations)
     if (event.seats !== null) {
       const activeCount = await this.rsvpRepo.count({
         where: { eventId, status: 'registered' },
@@ -199,6 +259,7 @@ export class EventsService {
 
     if (existing) {
       existing.status = 'registered';
+      existing.invoiceId = null;
       const saved = await this.rsvpRepo.save(existing);
       return { message: 'Successfully registered.', rsvp: saved };
     }
@@ -210,12 +271,40 @@ export class EventsService {
 
   async cancelRsvp(eventId: string, userId: string): Promise<{ message: string }> {
     const rsvp = await this.rsvpRepo.findOne({
-      where: { eventId, userId, status: 'registered' },
+      where: [{ eventId, userId, status: 'registered' }, { eventId, userId, status: 'pending_payment' }],
     });
     if (!rsvp) throw new NotFoundException('No active registration found.');
+
+    // For paid RSVPs: cancellation is blocked within PAID_EVENT_CUTOFF_DAYS of the event
+    if (rsvp.invoiceId) {
+      const event = await this.eventRepo.findOne({ where: { id: eventId } });
+      if (event && daysUntil(event.date) < PAID_EVENT_CUTOFF_DAYS) {
+        throw new BadRequestException(
+          `Cancellation is not allowed within ${PAID_EVENT_CUTOFF_DAYS} days of the event.`,
+        );
+      }
+      // Mark associated invoice as refunded
+      await this.invoiceRepo.update({ id: rsvp.invoiceId }, { status: 'refunded' });
+    }
+
     rsvp.status = 'cancelled';
     await this.rsvpRepo.save(rsvp);
     return { message: 'Registration cancelled.' };
+  }
+
+  /** Admin-only: confirm a pending_payment RSVP as registered (bypasses 7-day cutoff). */
+  async confirmRsvp(eventId: string, rsvpId: string): Promise<EventRsvp> {
+    const event = await this.eventRepo.findOne({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found.');
+
+    const rsvp = await this.rsvpRepo.findOne({
+      where: { id: rsvpId, eventId, status: 'pending_payment' },
+      relations: { user: true },
+    });
+    if (!rsvp) throw new NotFoundException('Pending RSVP not found.');
+
+    rsvp.status = 'registered';
+    return this.rsvpRepo.save(rsvp);
   }
 
   async getUserRsvp(
@@ -229,7 +318,7 @@ export class EventsService {
     const event = await this.eventRepo.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found.');
     return this.rsvpRepo.find({
-      where: { eventId, status: 'registered' },
+      where: [{ eventId, status: 'registered' }, { eventId, status: 'pending_payment' }],
       relations: { user: true },
       order: { createdAt: 'ASC' },
     });

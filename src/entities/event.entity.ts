@@ -76,6 +76,13 @@ export class Event {
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder: number;
 
+  /**
+   * Ticket price in BDT (integer). null or 0 = free event.
+   * When set, RSVP creates a pending Invoice before confirming registration.
+   */
+  @Column({ name: 'ticket_price', type: 'int', nullable: true, default: null })
+  ticketPrice: number | null;
+
   @OneToMany(() => EventRsvp, (rsvp) => rsvp.event)
   rsvps: EventRsvp[];
 

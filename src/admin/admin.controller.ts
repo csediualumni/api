@@ -332,4 +332,13 @@ export class AdminController {
   listEventRsvps(@Param('id') id: string) {
     return this.eventsService.listRsvps(id);
   }
+
+  @Post('events/:eventId/rsvps/:rsvpId/confirm')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  confirmEventRsvp(
+    @Param('eventId') eventId: string,
+    @Param('rsvpId') rsvpId: string,
+  ) {
+    return this.eventsService.confirmRsvp(eventId, rsvpId);
+  }
 }
