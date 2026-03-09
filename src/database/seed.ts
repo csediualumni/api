@@ -14,6 +14,7 @@ import { Invoice } from '../entities/invoice.entity';
 import { InvoicePayment } from '../entities/invoice-payment.entity';
 import { NewsletterSubscription } from '../entities/newsletter-subscription.entity';
 import { MembershipApplication } from '../entities/membership-application.entity';
+import { DesignationRoleMapping } from '../entities/designation-role-mapping.entity';
 import { ALL_PERMISSIONS } from '../auth/permissions.constants';
 
 const ds = new DataSource({
@@ -33,6 +34,7 @@ const ds = new DataSource({
     InvoicePayment,
     NewsletterSubscription,
     MembershipApplication,
+    DesignationRoleMapping,
   ],
   synchronize: true,
 });
@@ -45,6 +47,7 @@ async function main() {
   const rolePermRepo = ds.getRepository(RolePermission);
   const userRepo = ds.getRepository(User);
   const userRoleRepo = ds.getRepository(UserRole);
+  const mappingRepo = ds.getRepository(DesignationRoleMapping);
 
   // ── 1. Upsert every permission ──────────────────────────────
   console.log('▶ Seeding permissions…');
@@ -111,7 +114,89 @@ async function main() {
 
   console.log(`  ✓ Roles: super_admin, admin, member, guest`);
 
-  // ── 3. Seed super admin user ────────────────────────────────
+  // ── 2b. Committee roles ─────────────────────────────────────
+  console.log('▶ Seeding committee roles…');
+
+  const committeePresidentRole = await upsertRole(
+    roleRepo, rolePermRepo, 'committee_president',
+    'Active committee — President / Vice-President',
+    false,
+    [
+      perm('committees:read').id,
+      perm('committees:write').id,
+      perm('users:read').id,
+      perm('contact:read').id,
+      perm('contact:write').id,
+      perm('newsletter:read').id,
+      perm('newsletter:write').id,
+      perm('membership:read').id,
+      perm('invoices:read').id,
+      perm('milestones:read').id,
+      perm('milestones:write').id,
+    ],
+  );
+
+  const committeeSecretaryRole = await upsertRole(
+    roleRepo, rolePermRepo, 'committee_secretary',
+    'Active committee — Secretary',
+    false,
+    [
+      perm('contact:read').id,
+      perm('contact:write').id,
+      perm('newsletter:read').id,
+      perm('membership:read').id,
+      perm('milestones:read').id,
+    ],
+  );
+
+  const committeeTreasurerRole = await upsertRole(
+    roleRepo, rolePermRepo, 'committee_treasurer',
+    'Active committee — Treasurer',
+    false,
+    [
+      perm('invoices:read').id,
+      perm('invoices:write').id,
+      perm('membership:read').id,
+    ],
+  );
+
+  const committeeMemberRole = await upsertRole(
+    roleRepo, rolePermRepo, 'committee_member',
+    'Active committee — Executive Member / Adviser',
+    false,
+    [
+      perm('users:read').id,
+      perm('contact:read').id,
+    ],
+  );
+
+  console.log(`  ✓ Committee roles: committee_president, committee_secretary, committee_treasurer, committee_member`);
+
+  // ── 3. Default designation → role mappings ──────────────────
+  console.log('▶ Seeding designation role mappings…');
+
+  const defaultMappings: { designation: string; roleId: string }[] = [
+    { designation: 'President',          roleId: committeePresidentRole.id },
+    { designation: 'Vice President',     roleId: committeePresidentRole.id },
+    { designation: 'General Secretary',  roleId: committeeSecretaryRole.id },
+    { designation: 'Joint Secretary',    roleId: committeeSecretaryRole.id },
+    { designation: 'Treasurer',          roleId: committeeTreasurerRole.id },
+    { designation: 'Assistant Treasurer', roleId: committeeTreasurerRole.id },
+    { designation: 'Executive Member',   roleId: committeeMemberRole.id },
+    { designation: 'Adviser',            roleId: committeeMemberRole.id },
+  ];
+
+  for (const dm of defaultMappings) {
+    const existing = await mappingRepo.findOne({ where: { designation: dm.designation } });
+    if (existing) {
+      await mappingRepo.save({ ...existing, roleId: dm.roleId });
+    } else {
+      await mappingRepo.save(mappingRepo.create({ id: uuidv4(), ...dm }));
+    }
+  }
+  console.log(`  ✓ ${defaultMappings.length} designation mappings ready`);
+
+  // ── 4. Seed super admin user ────────────────────────────────────────
   const email = process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';
   const rawPassword = process.env.ADMIN_PASSWORD;
 

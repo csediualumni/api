@@ -18,8 +18,12 @@ import { UsersService } from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
 import { MilestonesService, CreateMilestoneDto, UpdateMilestoneDto } from '../milestones/milestones.service';
-import { CommitteesService, CreateCommitteeDto, UpdateCommitteeDto, AddCommitteeMemberDto, UpdateCommitteeMemberDto } from '../committees/committees.service';
-import { IsArray, IsString, IsNotEmpty, IsIn } from 'class-validator';
+import { CommitteesService, CreateCommitteeDto, UpdateCommitteeDto, AddCommitteeMemberDto, UpdateCommitteeMemberDto, SetDesignationMappingDto } from '../committees/committees.service';
+import { IsArray, IsString, IsNotEmpty, IsIn, IsUUID } from 'class-validator';
+
+class UpdateDesignationMappingDto {
+  @IsUUID() roleId: string;
+}
 
 class SetRolesDto {
   @IsArray() @IsString({ each: true }) roleIds: string[];
@@ -213,5 +217,32 @@ export class AdminController {
   @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
   removeCommitteeMember(@Param('memberId') memberId: string) {
     return this.committeesService.removeMember(memberId);
+  }
+
+  // ── Designation → Role mappings ──────────────────────────────
+
+  @Get('designation-roles')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_READ)
+  listDesignationMappings() {
+    return this.committeesService.listMappings();
+  }
+
+  @Post('designation-roles')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  setDesignationMapping(@Body() dto: SetDesignationMappingDto) {
+    return this.committeesService.setMapping(dto);
+  }
+
+  @Patch('designation-roles/:id')
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  updateDesignationMapping(@Param('id') id: string, @Body() dto: UpdateDesignationMappingDto) {
+    return this.committeesService.updateMapping(id, dto.roleId);
+  }
+
+  @Delete('designation-roles/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
+  removeDesignationMapping(@Param('id') id: string) {
+    return this.committeesService.removeMapping(id);
   }
 }

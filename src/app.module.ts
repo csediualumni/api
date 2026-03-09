@@ -31,6 +31,7 @@ import { Milestone } from './entities/milestone.entity';
 import { CommitteesModule } from './committees/committees.module';
 import { Committee } from './entities/committee.entity';
 import { CommitteeMember } from './entities/committee-member.entity';
+import { DesignationRoleMapping } from './entities/designation-role-mapping.entity';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { CommitteeMember } from './entities/committee-member.entity';
           Milestone,
           Committee,
           CommitteeMember,
+          DesignationRoleMapping,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
