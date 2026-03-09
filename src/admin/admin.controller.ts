@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,13 +9,17 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { read, utils } from 'xlsx';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions.constants';
-import { UsersService } from '../users/users.service';
+import { UsersService, ImportMemberRow } from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
 import { MilestonesService, CreateMilestoneDto, UpdateMilestoneDto } from '../milestones/milestones.service';
@@ -61,7 +66,21 @@ export class AdminController {
   listUsers() {
     return this.users.findAll();
   }
+  /** Bulk-import members from an uploaded CSV or Excel (.xlsx) file */
+  @Post('users/import')
+  @RequirePermissions(PERMISSIONS.USERS_WRITE)
+  @UseInterceptors(FileInterceptor('file'))
+  async importMembers(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file uploaded');
 
+    const workbook = read(file.buffer, { type: 'buffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = utils.sheet_to_json<ImportMemberRow>(sheet, { defval: '' });
+
+    if (rows.length === 0) throw new BadRequestException('The file contains no data rows');
+
+    return this.users.bulkImportMembers(rows);
+  }
   // ── Role assignment on users ───────────────────────────────
 
   /** Replace all roles on a user */

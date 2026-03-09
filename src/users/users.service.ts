@@ -54,6 +54,29 @@ export type UserWithPermissions = SafeUser & {
   roles: { id: string; name: string }[];
 };
 
+export interface ImportMemberRow {
+  email?: string | number;
+  displayName?: string;
+  batch?: string | number;
+  phone?: string;
+  jobTitle?: string;
+  company?: string;
+  industry?: string;
+  city?: string;
+  country?: string;
+  linkedin?: string;
+  github?: string;
+  twitter?: string;
+  website?: string;
+  [key: string]: unknown;
+}
+
+export interface BulkImportResult {
+  created: number;
+  updated: number;
+  errors: { row: number; email: string; reason: string }[];
+}
+
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -309,6 +332,81 @@ export class UsersService {
     const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
     const { password: _pw, ...safe } = user;
     return safe as SafeUser;
+  }
+
+  // ── Bulk member import ───────────────────────────────────────
+
+  async bulkImportMembers(rows: ImportMemberRow[]): Promise<BulkImportResult> {
+    const memberRole = await this.roleRepo.findOne({ where: { name: 'member' } });
+    if (!memberRole) throw new Error('"member" role not found in database — run the seeder first');
+
+    let created = 0;
+    let updated = 0;
+    const errors: BulkImportResult['errors'] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2; // 1-based row number accounting for header
+
+      const rawEmail = String(row.email ?? '').trim().toLowerCase();
+      if (!rawEmail || !rawEmail.includes('@')) {
+        errors.push({ row: rowNum, email: rawEmail, reason: 'Missing or invalid email' });
+        continue;
+      }
+      if (!row.displayName || String(row.displayName).trim() === '') {
+        errors.push({ row: rowNum, email: rawEmail, reason: 'Missing displayName' });
+        continue;
+      }
+      if (row.batch == null || String(row.batch).trim() === '') {
+        errors.push({ row: rowNum, email: rawEmail, reason: 'Missing batch (graduation year)' });
+        continue;
+      }
+      const batchNum = Number(row.batch);
+      if (isNaN(batchNum)) {
+        errors.push({ row: rowNum, email: rawEmail, reason: `Invalid batch "${row.batch}" — must be a numeric year` });
+        continue;
+      }
+
+      const profileFields: Partial<User> = {
+        displayName: String(row.displayName).trim(),
+        batch: batchNum,
+        ...(row.phone    ? { phone:    String(row.phone).trim()    } : {}),
+        ...(row.jobTitle ? { jobTitle: String(row.jobTitle).trim() } : {}),
+        ...(row.company  ? { company:  String(row.company).trim()  } : {}),
+        ...(row.industry ? { industry: String(row.industry).trim() } : {}),
+        ...(row.city     ? { city:     String(row.city).trim()     } : {}),
+        ...(row.country  ? { country:  String(row.country).trim()  } : {}),
+        ...(row.linkedin ? { linkedin: String(row.linkedin).trim() } : {}),
+        ...(row.github   ? { github:   String(row.github).trim()   } : {}),
+        ...(row.twitter  ? { twitter:  String(row.twitter).trim()  } : {}),
+        ...(row.website  ? { website:  String(row.website).trim()  } : {}),
+      };
+
+      try {
+        let user = await this.userRepo.findOne({ where: { email: rawEmail } });
+        if (!user) {
+          user = await this.userRepo.save(
+            this.userRepo.create({ email: rawEmail, password: null, ...profileFields }),
+          );
+          created++;
+        } else {
+          await this.userRepo.update(user.id, profileFields);
+          updated++;
+        }
+
+        // Ensure member role is assigned
+        const hasRole = await this.userRoleRepo.findOne({
+          where: { userId: user.id, roleId: memberRole.id },
+        });
+        if (!hasRole) {
+          await this.userRoleRepo.save({ userId: user.id, roleId: memberRole.id });
+        }
+      } catch (err: any) {
+        errors.push({ row: rowNum, email: rawEmail, reason: err?.message ?? 'Unexpected error' });
+      }
+    }
+
+    return { created, updated, errors };
   }
 
   // ── Password reset ───────────────────────────────────────────
