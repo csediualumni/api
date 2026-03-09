@@ -82,6 +82,10 @@ export class User {
   @Column({ nullable: true, type: 'varchar' })
   website: string | null;
 
+  /** Human-readable member ID assigned on membership approval e.g. CSEDIU-2026-0001 */
+  @Column({ name: 'member_id', nullable: true, unique: true, type: 'varchar' })
+  memberId: string | null;
+
   @Column({ name: 'open_to_mentoring', default: false })
   openToMentoring: boolean;
 

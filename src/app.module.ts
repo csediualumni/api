@@ -24,6 +24,8 @@ import { UserExperience } from './entities/user-experience.entity';
 import { UserEducation } from './entities/user-education.entity';
 import { UserAchievement } from './entities/user-achievement.entity';
 import { NewsletterSubscription } from './entities/newsletter-subscription.entity';
+import { MembershipApplication } from './entities/membership-application.entity';
+import { MembershipModule } from './membership/membership.module';
 
 @Module({
   imports: [
@@ -47,6 +49,7 @@ import { NewsletterSubscription } from './entities/newsletter-subscription.entit
           NewsletterSubscription,
           ContactTicket,
           ContactTicketComment,
+          MembershipApplication,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -60,6 +63,7 @@ import { NewsletterSubscription } from './entities/newsletter-subscription.entit
     InvoicesModule,
     NewsletterModule,
     ContactModule,
+    MembershipModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -30,6 +30,15 @@ export const PERMISSIONS = {
   // Contact ticket management
   CONTACT_READ: 'contact:read',
   CONTACT_WRITE: 'contact:write',
+
+  // Membership management
+  MEMBERSHIP_APPLY: 'membership:apply',
+  MEMBERSHIP_READ: 'membership:read',
+  MEMBERSHIP_REVIEW: 'membership:review',
+
+  // Profile management
+  PROFILE_READ: 'profile:read',
+  PROFILE_WRITE: 'profile:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -90,5 +99,30 @@ export const ALL_PERMISSIONS: {
     key: 'contact:write',
     description: 'Update ticket status and add comments',
     group: 'Contact',
+  },
+  {
+    key: 'membership:apply',
+    description: 'Submit a membership application',
+    group: 'Membership',
+  },
+  {
+    key: 'membership:read',
+    description: 'View all membership applications',
+    group: 'Membership',
+  },
+  {
+    key: 'membership:review',
+    description: 'Approve or reject membership applications',
+    group: 'Membership',
+  },
+  {
+    key: 'profile:read',
+    description: 'View full member profiles',
+    group: 'Profile',
+  },
+  {
+    key: 'profile:write',
+    description: 'Edit own profile',
+    group: 'Profile',
   },
 ];

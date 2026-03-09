@@ -371,4 +371,138 @@ export class MailService {
 
     this.logger.log(`Contact ticket comment email sent to ${to}`);
   }
+
+  // ── Membership emails ─────────────────────────────────────────
+
+  async sendMembershipInvoice(
+    to: string,
+    invoiceId: string,
+    amount: number,
+    paymentUrl: string,
+  ): Promise<void> {
+    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const shortId = invoiceId.slice(0, 8).toUpperCase();
+    const formattedAmount = `৳${amount.toLocaleString()}`;
+
+    await this.transporter.sendMail({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject: `Membership Application – Invoice ${shortId} – CSE DIU Alumni`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
+          <h2 style="margin:0 0 8px;color:#1e3a5f;font-size:20px;">Membership Application Received</h2>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
+            Thank you for applying for lifetime membership with the <strong>CSE DIU Alumni Network</strong>!
+            Please complete your payment to proceed.
+          </p>
+          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+            <table style="width:100%;font-size:13px;color:#3f3f46;">
+              <tr><td style="padding:4px 0;color:#71717a;">Invoice #</td><td style="padding:4px 0;font-family:monospace;font-weight:600;">${shortId}</td></tr>
+              <tr><td style="padding:4px 0;color:#71717a;">Description</td><td style="padding:4px 0;">CSE DIU Alumni Lifetime Membership</td></tr>
+              <tr><td style="padding:4px 0;color:#71717a;">Amount</td><td style="padding:4px 0;font-weight:700;color:#1e3a5f;">${formattedAmount}</td></tr>
+              <tr><td style="padding:4px 0;color:#71717a;">Payment Method</td><td style="padding:4px 0;">bKash (manual)</td></tr>
+            </table>
+          </div>
+          <p style="color:#52525b;font-size:14px;margin:0 0 16px;">
+            Click the button below to submit your bKash payment details. You can also pay later using this link.
+          </p>
+          <a href="${paymentUrl}"
+            style="display:inline-block;padding:12px 28px;background:#1e3a5f;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
+            Pay Now – ${formattedAmount}
+          </a>
+          <p style="color:#a1a1aa;font-size:12px;margin:24px 0 0;">
+            Once your payment is verified, your application will be reviewed and you will receive an approval notification.<br><br>
+            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>
+          </p>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Membership invoice email sent to ${to} for invoice ${invoiceId}`);
+  }
+
+  async sendMembershipApproved(
+    to: string,
+    name: string,
+    dashboardUrl: string,
+    memberId: string,
+  ): Promise<void> {
+    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+
+    await this.transporter.sendMail({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject: `Welcome to CSE DIU Alumni Network! Your membership is approved`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
+          <h2 style="margin:0 0 8px;color:#065f46;font-size:20px;">🎉 Membership Approved!</h2>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
+            Congratulations, <strong>${name}</strong>! Your lifetime membership application to the
+            <strong>CSE DIU Alumni Network</strong> has been approved.
+          </p>
+          <div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#065f46;text-transform:uppercase;letter-spacing:.05em;">Your Member ID</p>
+            <p style="margin:0;font-size:22px;font-weight:700;color:#064e3b;font-family:monospace;letter-spacing:.08em;">${memberId}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#047857;">Use this ID for events, programs, and alumni activities.</p>
+          </div>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 24px;">
+            You now have full member access — explore alumni profiles, events, job listings, and the mentorship programme.
+          </p>
+          <a href="${dashboardUrl}"
+            style="display:inline-block;padding:12px 28px;background:#065f46;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
+            Go to Dashboard
+          </a>
+          <p style="color:#a1a1aa;font-size:12px;margin:24px 0 0;">
+            Welcome aboard!<br><br>
+            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>
+          </p>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Membership approved email sent to ${to}`);
+  }
+
+  async sendMembershipRejected(
+    to: string,
+    name: string,
+    reason: string,
+    refundRequired: boolean,
+  ): Promise<void> {
+    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+
+    const refundSection = refundRequired
+      ? `<div style="background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;padding:12px 16px;margin:0 0 20px;color:#92400e;font-size:13px;">
+           <strong>Refund:</strong> Since you had submitted a payment, a refund of ৳500 will be processed to your bKash account.
+           Please contact us at <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a> if you do not receive it within 7 business days.
+         </div>`
+      : '';
+
+    await this.transporter.sendMail({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject: `Membership Application Update – CSE DIU Alumni`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
+          <h2 style="margin:0 0 8px;color:#7f1d1d;font-size:20px;">Membership Application Update</h2>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
+            Hi <strong>${name}</strong>, unfortunately your membership application has not been approved at this time.
+          </p>
+          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
+            <p style="margin:0;font-size:13px;color:#71717a;font-weight:500;">Reason</p>
+            <p style="margin:8px 0 0;font-size:14px;color:#3f3f46;">${reason}</p>
+          </div>
+          ${refundSection}
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 0;">
+            If you believe this is an error or have questions, please reach out to us.
+          </p>
+          <p style="color:#a1a1aa;font-size:12px;margin:24px 0 0;">
+            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>
+          </p>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Membership rejected email sent to ${to}`);
+  }
 }

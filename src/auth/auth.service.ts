@@ -31,6 +31,7 @@ export class AuthService {
 
     const hashed = await bcrypt.hash(dto.password, 12);
     const user = await this.users.createWithPassword(dto.email, hashed);
+    await this.users.assignGuestRole(user.id);
     return this.buildSession(user.id, user.email);
   }
 
@@ -109,6 +110,7 @@ export class AuthService {
         });
       } else {
         user = await this.users.createWithGoogle(googleUser);
+        await this.users.assignGuestRole(user.id);
       }
     }
 
@@ -123,11 +125,12 @@ export class AuthService {
     const full = await this.users.findWithPermissions(sub);
     const permissions = full?.permissions ?? [];
     const roles = full?.roles ?? [];
+    const memberId = full?.memberId ?? null;
 
-    const payload = { sub, email, permissions };
+    const payload = { sub, email, permissions, roles, memberId };
     return {
       accessToken: this.jwt.sign(payload),
-      user: { id: sub, email, permissions, roles },
+      user: { id: sub, email, permissions, roles, memberId },
     };
   }
 }

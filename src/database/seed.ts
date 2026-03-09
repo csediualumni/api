@@ -13,6 +13,7 @@ import { UserAchievement } from '../entities/user-achievement.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { InvoicePayment } from '../entities/invoice-payment.entity';
 import { NewsletterSubscription } from '../entities/newsletter-subscription.entity';
+import { MembershipApplication } from '../entities/membership-application.entity';
 import { ALL_PERMISSIONS } from '../auth/permissions.constants';
 
 const ds = new DataSource({
@@ -31,6 +32,7 @@ const ds = new DataSource({
     Invoice,
     InvoicePayment,
     NewsletterSubscription,
+    MembershipApplication,
   ],
   synchronize: true,
 });
@@ -88,12 +90,26 @@ async function main() {
     roleRepo,
     rolePermRepo,
     'member',
-    'Regular member — no admin access',
+    'Regular member — full access to alumni content',
     true,
-    [],
+    [
+      perm('profile:read').id,
+      perm('profile:write').id,
+    ],
+  );
+  await upsertRole(
+    roleRepo,
+    rolePermRepo,
+    'guest',
+    'Newly registered user — can apply for membership',
+    true,
+    [
+      perm('membership:apply').id,
+      perm('profile:write').id,
+    ],
   );
 
-  console.log(`  ✓ Roles: super_admin, admin, member`);
+  console.log(`  ✓ Roles: super_admin, admin, member, guest`);
 
   // ── 3. Seed super admin user ────────────────────────────────
   const email = process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';

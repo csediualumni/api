@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { UserRole } from '../entities/user-role.entity';
+import { Role } from '../entities/role.entity';
 import { UserExperience } from '../entities/user-experience.entity';
 import { UserEducation } from '../entities/user-education.entity';
 import { UserAchievement } from '../entities/user-achievement.entity';
@@ -54,10 +55,14 @@ export type UserWithPermissions = SafeUser & {
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(UserRole)
     private readonly userRoleRepo: Repository<UserRole>,
+    @InjectRepository(Role)
+    private readonly roleRepo: Repository<Role>,
     @InjectRepository(UserExperience)
     private readonly expRepo: Repository<UserExperience>,
     @InjectRepository(UserEducation)
@@ -86,6 +91,10 @@ export class UsersService {
 
   findById(id: string): Promise<User | null> {
     return this.userRepo.findOne({ where: { id } });
+  }
+
+  async setMemberId(userId: string, memberId: string): Promise<void> {
+    await this.userRepo.update(userId, { memberId });
   }
 
   /** Load a user with profile relations (experiences, educations, achievements) */
@@ -150,6 +159,25 @@ export class UsersService {
   }): Promise<User> {
     const user = this.userRepo.create(data);
     return this.userRepo.save(user);
+  }
+
+  /**
+   * Looks up the 'guest' system role and assigns it to the given user.
+   * Called after every new registration (email/password and Google OAuth).
+   * Safe to call even if the guest role doesn't exist yet (logs a warning).
+   */
+  async assignGuestRole(userId: string): Promise<void> {
+    const guestRole = await this.roleRepo.findOne({ where: { name: 'guest' } });
+    if (!guestRole) {
+      this.logger.warn('assignGuestRole: guest role not found in DB — skipping');
+      return;
+    }
+    const exists = await this.userRoleRepo.findOne({
+      where: { userId, roleId: guestRole.id },
+    });
+    if (!exists) {
+      await this.userRoleRepo.save({ userId, roleId: guestRole.id });
+    }
   }
 
   async connectGoogle(
@@ -326,6 +354,7 @@ export class UsersService {
       displayName: u.displayName,
       avatar: u.avatar,
       email: u.email,
+      memberId: u.memberId ?? null,
       batch: u.batch,
       bio: u.bio,
       jobTitle: u.jobTitle,
@@ -366,6 +395,7 @@ export interface PublicAlumnusDto {
   displayName: string | null;
   avatar: string | null;
   email: string;
+  memberId: string | null;
   batch: number | null;
   bio: string | null;
   jobTitle: string | null;
