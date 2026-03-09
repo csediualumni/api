@@ -26,6 +26,7 @@ export interface UpdateProfileDto {
   website?: string;
   skills?: string[];
   openToMentoring?: boolean;
+  profileVisibility?: boolean;
 }
 
 export interface UpsertExperienceDto {
@@ -340,7 +341,7 @@ export class UsersService {
   async findPublicAlumni(): Promise<PublicAlumnusDto[]> {
     const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';
     const users = await this.userRepo.find({
-      where: { email: Not(adminEmail) },
+      where: { email: Not(adminEmail), profileVisibility: true },
       relations: { experiences: true, educations: true, achievements: true },
       order: {
         createdAt: 'ASC',
@@ -367,6 +368,7 @@ export class UsersService {
       twitter: u.twitter,
       website: u.website,
       openToMentoring: u.openToMentoring,
+      profileVisibility: u.profileVisibility,
       skills: u.skills,
       experiences: (u.experiences ?? []).map((e) => ({
         id: e.id,
@@ -408,6 +410,7 @@ export interface PublicAlumnusDto {
   twitter: string | null;
   website: string | null;
   openToMentoring: boolean;
+  profileVisibility: boolean;
   skills: string[] | null;
   experiences: {
     id: string;

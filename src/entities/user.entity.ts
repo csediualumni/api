@@ -89,6 +89,9 @@ export class User {
   @Column({ name: 'open_to_mentoring', default: false })
   openToMentoring: boolean;
 
+  @Column({ name: 'profile_visibility', default: false })
+  profileVisibility: boolean;
+
   @Column({ type: 'simple-array', nullable: true })
   skills: string[] | null;
 
