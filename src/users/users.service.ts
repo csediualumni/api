@@ -462,30 +462,9 @@ export class UsersService {
 
   // ── Member ID generation ─────────────────────────────────────
 
-  /** Generates and persists a new memberId for the given user. Throws if the user
-   * already has one or if the user is not found. */
-  async assignMemberId(userId: string): Promise<string> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-    if (user.memberId) throw new BadRequestException('User already has a member ID');
-
-    const MAX_RETRIES = 5;
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      const memberId = await this.generateMemberId();
-      try {
-        await this.userRepo.update(userId, { memberId });
-        return memberId;
-      } catch (err: any) {
-        // Postgres unique violation code; retry with the next available ID
-        if (err?.driverError?.code === '23505' || err?.code === '23505') {
-          continue;
-        }
-        throw err;
-      }
-    }
-    throw new Error('Failed to assign a unique member ID after multiple attempts');
-  }
-
+  /** Returns the next sequential member ID for the current year.
+   *  Callers are responsible for ensuring serialisation when concurrent
+   *  requests are possible (see assignMemberId). */
   private async generateMemberId(): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = `CSEDIU-${year}-`;
@@ -497,6 +476,37 @@ export class UsersService {
     );
     const next = (parseInt(rows[0]?.max ?? '0', 10) || 0) + 1;
     return `${prefix}${String(next).padStart(4, '0')}`;
+  }
+
+  /** Generates and persists a new memberId for the given user. Throws if the user
+   * already has one or if the user is not found. */
+  async assignMemberId(userId: string): Promise<string> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.memberId) throw new BadRequestException('User already has a member ID');
+
+    // Use an advisory lock inside a transaction so concurrent calls serialise
+    // rather than racing to grab the same generated ID.
+    const memberId = await this.userRepo.manager.transaction(async (em) => {
+      // Lock key 987654321 is an arbitrary constant that namespaces this lock.
+      await em.query('SELECT pg_advisory_xact_lock(987654321)');
+
+      const year = new Date().getFullYear();
+      const prefix = `CSEDIU-${year}-`;
+      const rows = await em.query<{ max: string | null }[]>(
+        `SELECT MAX(CAST(SUBSTRING(member_id FROM $1) AS INTEGER)) AS max
+         FROM users
+         WHERE member_id LIKE $2`,
+        [prefix.length + 1, `${prefix}%`],
+      );
+      const next = (parseInt(rows[0]?.max ?? '0', 10) || 0) + 1;
+      const newMemberId = `${prefix}${String(next).padStart(4, '0')}`;
+
+      await em.update(User, userId, { memberId: newMemberId });
+      return newMemberId;
+    });
+
+    return memberId;
   }
 
   // ── Password reset ───────────────────────────────────────────
