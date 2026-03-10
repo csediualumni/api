@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -461,6 +461,17 @@ export class UsersService {
   }
 
   // ── Member ID generation ─────────────────────────────────────
+
+  /** Generates and persists a new memberId for the given user. Throws if the user
+   * already has one or if the user is not found. */
+  async assignMemberId(userId: string): Promise<string> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.memberId) throw new BadRequestException('User already has a member ID');
+    const memberId = await this.generateMemberId();
+    await this.userRepo.update(userId, { memberId });
+    return memberId;
+  }
 
   private async generateMemberId(): Promise<string> {
     const year = new Date().getFullYear();

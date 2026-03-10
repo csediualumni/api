@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -123,6 +124,23 @@ export class AuthController {
   async updateMe(@Req() req: Request, @Body() dto: UpdateProfileDto) {
     const jwtUser = req.user as { id: string };
     return this.users.updateProfile(jwtUser.id, dto);
+  }
+
+  // ──────────────────────────────────────────────
+  // Member ID generation (self-service)
+  // ──────────────────────────────────────────────
+
+  @Post('me/generate-member-id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async generateMemberId(@Req() req: Request): Promise<{ memberId: string }> {
+    const jwtUser = req.user as { id: string; roles?: { name: string }[] };
+    const hasMemberRole = (jwtUser.roles ?? []).some((r) => r.name === 'member');
+    if (!hasMemberRole) {
+      throw new ForbiddenException('Only members can generate a member ID');
+    }
+    const memberId = await this.users.assignMemberId(jwtUser.id);
+    return { memberId };
   }
 
   @Post('me/avatar')
