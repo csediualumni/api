@@ -35,6 +35,8 @@ import { DesignationRoleMapping } from './entities/designation-role-mapping.enti
 import { EventsModule } from './events/events.module';
 import { Event } from './entities/event.entity';
 import { EventRsvp } from './entities/event-rsvp.entity';
+import { CampaignsModule } from './campaigns/campaigns.module';
+import { Campaign } from './entities/campaign.entity';
 
 @Module({
   imports: [
@@ -65,6 +67,7 @@ import { EventRsvp } from './entities/event-rsvp.entity';
           DesignationRoleMapping,
           Event,
           EventRsvp,
+          Campaign,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -82,6 +85,7 @@ import { EventRsvp } from './entities/event-rsvp.entity';
     MilestonesModule,
     CommitteesModule,
     EventsModule,
+    CampaignsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

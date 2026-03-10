@@ -168,6 +168,34 @@ export class InvoicesService {
     return inv;
   }
 
+  async getRecentDonors(limit = 8): Promise<
+    {
+      donorName: string | null;
+      isAnonymous: boolean;
+      totalAmount: number;
+      campaignTitle: string | null;
+      createdAt: Date;
+      metadata: Record<string, unknown> | null;
+    }[]
+  > {
+    const invoices = await this.invoiceRepo.find({
+      where: [
+        { type: 'donation', status: 'paid' },
+        { type: 'donation', status: 'partial' },
+      ],
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+    return invoices.map((inv) => ({
+      donorName: inv.isAnonymous ? null : inv.donorName,
+      isAnonymous: inv.isAnonymous,
+      totalAmount: inv.totalAmount,
+      campaignTitle: inv.campaignTitle,
+      createdAt: inv.createdAt,
+      metadata: inv.metadata,
+    }));
+  }
+
   async submitPayment(
     invoiceId: string,
     dto: SubmitPaymentDto,

@@ -99,6 +99,12 @@ export class InvoicesController {
     });
   }
 
+  // ── Public: get recent donors ─────────────────────────────────
+  @Get('donations/recent')
+  getRecentDonors(@Query('limit') limit = 8) {
+    return this.invoices.getRecentDonors(Number(limit));
+  }
+
   // ── Public: get single invoice by ID ──────────────────────────
   @Get(':id')
   findOne(@Param('id') id: string) {

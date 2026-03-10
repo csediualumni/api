@@ -51,6 +51,9 @@ export const PERMISSIONS = {
   // Events management
   EVENTS_READ: 'events:read',
   EVENTS_WRITE: 'events:write',
+
+  // Campaigns management
+  CAMPAIGNS_WRITE: 'campaigns:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -166,5 +169,10 @@ export const ALL_PERMISSIONS: {
     key: 'events:write',
     description: 'Create, update and delete events',
     group: 'Events',
+  },
+  {
+    key: 'campaigns:write',
+    description: 'Create, update and delete donation campaigns',
+    group: 'Campaigns',
   },
 ];
