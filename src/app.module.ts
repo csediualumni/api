@@ -42,6 +42,15 @@ import { GalleryAlbum } from './entities/gallery-album.entity';
 import { GalleryItem } from './entities/gallery-item.entity';
 import { NewsModule } from './news/news.module';
 import { NewsArticle } from './entities/news-article.entity';
+import { ResearchModule } from './research/research.module';
+import { ResearchPaper } from './entities/research-paper.entity';
+import { MentorshipModule } from './mentorship/mentorship.module';
+import { Mentor } from './entities/mentor.entity';
+import { MentorApplication } from './entities/mentor-application.entity';
+import { ScholarshipsModule } from './scholarships/scholarships.module';
+import { Scholarship } from './entities/scholarship.entity';
+import { JobsModule } from './jobs/jobs.module';
+import { JobPosting } from './entities/job-posting.entity';
 
 @Module({
   imports: [
@@ -76,6 +85,11 @@ import { NewsArticle } from './entities/news-article.entity';
           GalleryAlbum,
           GalleryItem,
           NewsArticle,
+          ResearchPaper,
+          Mentor,
+          MentorApplication,
+          Scholarship,
+          JobPosting,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -96,6 +110,10 @@ import { NewsArticle } from './entities/news-article.entity';
     CampaignsModule,
     GalleryModule,
     NewsModule,
+    ResearchModule,
+    MentorshipModule,
+    ScholarshipsModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

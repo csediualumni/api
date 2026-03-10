@@ -62,6 +62,22 @@ export const PERMISSIONS = {
   // News management
   NEWS_READ: 'news:read',
   NEWS_WRITE: 'news:write',
+
+  // Research management
+  RESEARCH_READ: 'research:read',
+  RESEARCH_WRITE: 'research:write',
+
+  // Mentors / Mentorship management
+  MENTORS_READ: 'mentors:read',
+  MENTORS_WRITE: 'mentors:write',
+
+  // Scholarships management
+  SCHOLARSHIPS_READ: 'scholarships:read',
+  SCHOLARSHIPS_WRITE: 'scholarships:write',
+
+  // Job board management
+  JOBS_READ: 'jobs:read',
+  JOBS_WRITE: 'jobs:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -202,5 +218,45 @@ export const ALL_PERMISSIONS: {
     key: 'news:write',
     description: 'Create, update and delete news articles',
     group: 'News',
+  },
+  {
+    key: 'research:read',
+    description: 'View all research papers',
+    group: 'Research',
+  },
+  {
+    key: 'research:write',
+    description: 'Create, update and delete research papers',
+    group: 'Research',
+  },
+  {
+    key: 'mentors:read',
+    description: 'View mentors and mentee applications',
+    group: 'Mentorship',
+  },
+  {
+    key: 'mentors:write',
+    description: 'Create, update and delete mentors; manage applications',
+    group: 'Mentorship',
+  },
+  {
+    key: 'scholarships:read',
+    description: 'View all scholarships',
+    group: 'Scholarships',
+  },
+  {
+    key: 'scholarships:write',
+    description: 'Create, update and delete scholarships',
+    group: 'Scholarships',
+  },
+  {
+    key: 'jobs:read',
+    description: 'View all job postings',
+    group: 'Jobs',
+  },
+  {
+    key: 'jobs:write',
+    description: 'Create, update and delete job postings',
+    group: 'Jobs',
   },
 ];
