@@ -51,9 +51,16 @@ export class AuthService {
       'If an account with that email exists, a password recovery link has been sent.';
 
     const user = await this.users.findByEmail(email);
-    if (!user || !user.password) {
-      // Google-only accounts or non-existent — return generic message
+    if (!user) {
+      // Non-existent account — return generic message to avoid revealing account existence
       return { message: genericMessage };
+    }
+
+    if (user.googleId) {
+      // Confirmed Google-linked account — give a helpful, specific message
+      throw new BadRequestException(
+        'This account uses Google Sign-In. Please use the "Sign in with Google" button instead.',
+      );
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -66,7 +73,12 @@ export class AuthService {
     );
     const resetLink = `${frontendUrl}/auth/reset-password?token=${token}`;
 
-    await this.mail.sendPasswordReset(email, resetLink);
+    try {
+      await this.mail.sendPasswordReset(email, resetLink);
+    } catch (err) {
+      // Log SMTP error but still return success to avoid leaking details
+      console.error('Failed to send password reset email:', err);
+    }
 
     return { message: genericMessage };
   }

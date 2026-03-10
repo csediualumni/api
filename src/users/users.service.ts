@@ -124,6 +124,10 @@ export class UsersService {
     await this.userRepo.update(userId, { memberId });
   }
 
+  async updateAvatar(userId: string, avatarUrl: string): Promise<void> {
+    await this.userRepo.update(userId, { avatar: avatarUrl });
+  }
+
   /** Load a user with profile relations (experiences, educations, achievements) */
   async findByIdWithProfile(id: string): Promise<User | null> {
     return this.userRepo.findOne({
@@ -420,10 +424,6 @@ export class UsersService {
               ...profileFields,
             }),
           );
-          // Generate and assign a memberId for newly imported members
-          const memberId = await this.generateMemberId();
-          await this.userRepo.update(user.id, { memberId });
-          user.memberId = memberId;
           created++;
         } else {
           await this.userRepo.update(user.id, profileFields);
@@ -439,6 +439,14 @@ export class UsersService {
             userId: user.id,
             roleId: memberRole.id,
           });
+        }
+
+        // Ensure every imported member has a memberId (covers new users and
+        // existing users who were previously missing one)
+        if (!user.memberId) {
+          const memberId = await this.generateMemberId();
+          await this.userRepo.update(user.id, { memberId });
+          user.memberId = memberId;
         }
       } catch (err: unknown) {
         errors.push({

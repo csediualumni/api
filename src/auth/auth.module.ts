@@ -8,11 +8,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
     UsersModule,
     MailModule,
+    UploadModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

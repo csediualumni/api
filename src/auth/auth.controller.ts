@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,14 +11,18 @@ import {
   Post,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
+import { UploadService } from '../upload/upload.service';
 import { UsersService } from '../users/users.service';
 import type {
   UpdateProfileDto,
@@ -39,6 +44,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly users: UsersService,
     private readonly config: ConfigService,
+    private readonly upload: UploadService,
   ) {}
 
   // ──────────────────────────────────────────────
@@ -117,6 +123,24 @@ export class AuthController {
   async updateMe(@Req() req: Request, @Body() dto: UpdateProfileDto) {
     const jwtUser = req.user as { id: string };
     return this.users.updateProfile(jwtUser.id, dto);
+  }
+
+  @Post('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ avatar: string }> {
+    if (!file) throw new BadRequestException('No file uploaded');
+    if (!file.mimetype.startsWith('image/'))
+      throw new BadRequestException('Only image files are allowed');
+    const ext = (file.originalname.split('.').pop() ?? 'jpg').toLowerCase();
+    const { id } = req.user as { id: string };
+    const url = await this.upload.uploadFile(file.buffer, file.mimetype, ext, 'avatars');
+    await this.users.updateAvatar(id, url);
+    return { avatar: url };
   }
 
   // ──────────────────────────────────────────────
