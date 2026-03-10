@@ -468,9 +468,22 @@ export class UsersService {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
     if (user.memberId) throw new BadRequestException('User already has a member ID');
-    const memberId = await this.generateMemberId();
-    await this.userRepo.update(userId, { memberId });
-    return memberId;
+
+    const MAX_RETRIES = 5;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const memberId = await this.generateMemberId();
+      try {
+        await this.userRepo.update(userId, { memberId });
+        return memberId;
+      } catch (err: any) {
+        // Postgres unique violation code; retry with the next available ID
+        if (err?.driverError?.code === '23505' || err?.code === '23505') {
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('Failed to assign a unique member ID after multiple attempts');
   }
 
   private async generateMemberId(): Promise<string> {
