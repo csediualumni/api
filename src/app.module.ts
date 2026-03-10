@@ -37,6 +37,9 @@ import { Event } from './entities/event.entity';
 import { EventRsvp } from './entities/event-rsvp.entity';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { Campaign } from './entities/campaign.entity';
+import { GalleryModule } from './gallery/gallery.module';
+import { GalleryAlbum } from './entities/gallery-album.entity';
+import { GalleryItem } from './entities/gallery-item.entity';
 
 @Module({
   imports: [
@@ -68,6 +71,8 @@ import { Campaign } from './entities/campaign.entity';
           Event,
           EventRsvp,
           Campaign,
+          GalleryAlbum,
+          GalleryItem,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -86,6 +91,7 @@ import { Campaign } from './entities/campaign.entity';
     CommitteesModule,
     EventsModule,
     CampaignsModule,
+    GalleryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -16,6 +16,8 @@ import { NewsletterSubscription } from '../entities/newsletter-subscription.enti
 import { MembershipApplication } from '../entities/membership-application.entity';
 import { DesignationRoleMapping } from '../entities/designation-role-mapping.entity';
 import { Campaign } from '../entities/campaign.entity';
+import { GalleryAlbum } from '../entities/gallery-album.entity';
+import { GalleryItem } from '../entities/gallery-item.entity';
 import { ALL_PERMISSIONS } from '../auth/permissions.constants';
 
 const ds = new DataSource({
@@ -37,6 +39,8 @@ const ds = new DataSource({
     MembershipApplication,
     DesignationRoleMapping,
     Campaign,
+    GalleryAlbum,
+    GalleryItem,
   ],
   synchronize: true,
 });
@@ -89,6 +93,8 @@ async function main() {
       perm('users:assign_role').id,
       perm('roles:read').id,
       perm('permissions:read').id,
+      perm('gallery:write').id,
+      perm('gallery:read').id,
     ],
   );
   await upsertRole(
@@ -131,6 +137,8 @@ async function main() {
       perm('invoices:read').id,
       perm('milestones:read').id,
       perm('milestones:write').id,
+      perm('gallery:read').id,
+      perm('gallery:write').id,
     ],
   );
 

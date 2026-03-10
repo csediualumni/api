@@ -54,6 +54,10 @@ export const PERMISSIONS = {
 
   // Campaigns management
   CAMPAIGNS_WRITE: 'campaigns:write',
+
+  // Gallery management
+  GALLERY_READ: 'gallery:read',
+  GALLERY_WRITE: 'gallery:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -174,5 +178,15 @@ export const ALL_PERMISSIONS: {
     key: 'campaigns:write',
     description: 'Create, update and delete donation campaigns',
     group: 'Campaigns',
+  },
+  {
+    key: 'gallery:read',
+    description: 'View gallery albums and media items',
+    group: 'Gallery',
+  },
+  {
+    key: 'gallery:write',
+    description: 'Create, update and delete gallery albums and media items',
+    group: 'Gallery',
   },
 ];
