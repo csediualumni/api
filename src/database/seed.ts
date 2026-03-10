@@ -17,6 +17,20 @@ import { MembershipApplication } from '../entities/membership-application.entity
 import { DesignationRoleMapping } from '../entities/designation-role-mapping.entity';
 import { GalleryAlbum } from '../entities/gallery-album.entity';
 import { GalleryItem } from '../entities/gallery-item.entity';
+import { Committee } from '../entities/committee.entity';
+import { CommitteeMember } from '../entities/committee-member.entity';
+import { Milestone } from '../entities/milestone.entity';
+import { ContactTicket } from '../entities/contact-ticket.entity';
+import { ContactTicketComment } from '../entities/contact-ticket-comment.entity';
+import { Event } from '../entities/event.entity';
+import { EventRsvp } from '../entities/event-rsvp.entity';
+import { Campaign } from '../entities/campaign.entity';
+import { NewsArticle } from '../entities/news-article.entity';
+import { ResearchPaper } from '../entities/research-paper.entity';
+import { Mentor } from '../entities/mentor.entity';
+import { MentorApplication } from '../entities/mentor-application.entity';
+import { Scholarship } from '../entities/scholarship.entity';
+import { JobPosting } from '../entities/job-posting.entity';
 import { ALL_PERMISSIONS } from '../auth/permissions.constants';
 
 const ds = new DataSource({
@@ -39,6 +53,20 @@ const ds = new DataSource({
     DesignationRoleMapping,
     GalleryAlbum,
     GalleryItem,
+    Committee,
+    CommitteeMember,
+    Milestone,
+    ContactTicket,
+    ContactTicketComment,
+    Event,
+    EventRsvp,
+    Campaign,
+    NewsArticle,
+    ResearchPaper,
+    Mentor,
+    MentorApplication,
+    Scholarship,
+    JobPosting,
   ],
   synchronize: true,
 });
