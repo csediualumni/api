@@ -9,6 +9,7 @@ import { UserExperience } from '../entities/user-experience.entity';
 import { UserEducation } from '../entities/user-education.entity';
 import { UserAchievement } from '../entities/user-achievement.entity';
 import { Event } from '../entities/event.entity';
+import { MemberIdCounter } from '../entities/member-id-counter.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Event } from '../entities/event.entity';
       UserEducation,
       UserAchievement,
       Event,
+      MemberIdCounter,
     ]),
   ],
   controllers: [UsersController],

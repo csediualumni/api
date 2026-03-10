@@ -31,6 +31,7 @@ import { Mentor } from '../entities/mentor.entity';
 import { MentorApplication } from '../entities/mentor-application.entity';
 import { Scholarship } from '../entities/scholarship.entity';
 import { JobPosting } from '../entities/job-posting.entity';
+import { MemberIdCounter } from '../entities/member-id-counter.entity';
 import { ALL_PERMISSIONS } from '../auth/permissions.constants';
 
 const ds = new DataSource({
@@ -67,6 +68,7 @@ const ds = new DataSource({
     MentorApplication,
     Scholarship,
     JobPosting,
+        MemberIdCounter,
   ],
   synchronize: true,
 });

@@ -29,6 +29,7 @@ import { Mentor } from '../entities/mentor.entity';
 import { MentorApplication } from '../entities/mentor-application.entity';
 import { Scholarship } from '../entities/scholarship.entity';
 import { JobPosting } from '../entities/job-posting.entity';
+import { MemberIdCounter } from '../entities/member-id-counter.entity';
 
 const ds = new DataSource({
   type: 'postgres',
@@ -64,6 +65,7 @@ const ds = new DataSource({
     MentorApplication,
     Scholarship,
     JobPosting,
+    MemberIdCounter,
   ],
   // dropSchema drops the entire public schema and all its tables,
   // then synchronize recreates a clean schema from all entities.

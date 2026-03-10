@@ -51,6 +51,7 @@ import { ScholarshipsModule } from './scholarships/scholarships.module';
 import { Scholarship } from './entities/scholarship.entity';
 import { JobsModule } from './jobs/jobs.module';
 import { JobPosting } from './entities/job-posting.entity';
+import { MemberIdCounter } from './entities/member-id-counter.entity';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { JobPosting } from './entities/job-posting.entity';
           MentorApplication,
           Scholarship,
           JobPosting,
+          MemberIdCounter,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },

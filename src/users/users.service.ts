@@ -8,6 +8,7 @@ import { UserExperience } from '../entities/user-experience.entity';
 import { UserEducation } from '../entities/user-education.entity';
 import { UserAchievement } from '../entities/user-achievement.entity';
 import { Event } from '../entities/event.entity';
+import { MemberIdCounter } from '../entities/member-id-counter.entity';
 
 export type SafeUser = Omit<User, 'password' | 'generateId'>;
 
@@ -96,6 +97,8 @@ export class UsersService {
     private readonly achRepo: Repository<UserAchievement>,
     @InjectRepository(Event)
     private readonly eventRepo: Repository<Event>,
+    @InjectRepository(MemberIdCounter)
+    private readonly memberIdCounterRepo: Repository<MemberIdCounter>,
   ) {}
 
   // ── Finders ─────────────────────────────────────────────────
@@ -444,7 +447,7 @@ export class UsersService {
         // Ensure every imported member has a memberId (covers new users and
         // existing users who were previously missing one)
         if (!user.memberId) {
-          const memberId = await this.generateMemberId();
+          const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
           await this.userRepo.update(user.id, { memberId });
           user.memberId = memberId;
         }
@@ -462,50 +465,37 @@ export class UsersService {
 
   // ── Member ID generation ─────────────────────────────────────
 
-  /** Returns the next sequential member ID for the current year.
-   *  Callers are responsible for ensuring serialisation when concurrent
-   *  requests are possible (see assignMemberId). */
-  private async generateMemberId(): Promise<string> {
-    const year = new Date().getFullYear();
+  /**
+   * Returns the next sequential member ID for the current year.
+   * Uses an atomic `INSERT … ON CONFLICT DO UPDATE … RETURNING` against
+   * the `member_id_counter` table so no application-level locking or
+   * retry logic is required — Postgres serialises concurrent updates to
+   * the same row automatically.
+   */
+  private async nextMemberIdForYear(year: number): Promise<string> {
     const prefix = `CSEDIU-${year}-`;
-    const rows = await this.userRepo.manager.query<{ max: string | null }[]>(
-      `SELECT MAX(CAST(SUBSTRING(member_id FROM $1) AS INTEGER)) AS max
-       FROM users
-       WHERE member_id LIKE $2`,
-      [prefix.length + 1, `${prefix}%`],
+    const result = await this.memberIdCounterRepo.manager.query<
+      [{ last_seq: number }]
+    >(
+      `INSERT INTO member_id_counter (year, last_seq)
+       VALUES ($1, 1)
+       ON CONFLICT (year)
+       DO UPDATE SET last_seq = member_id_counter.last_seq + 1
+       RETURNING last_seq`,
+      [year],
     );
-    const next = (parseInt(rows[0]?.max ?? '0', 10) || 0) + 1;
-    return `${prefix}${String(next).padStart(4, '0')}`;
+    const seq = result[0].last_seq;
+    return `${prefix}${String(seq).padStart(4, '0')}`;
   }
 
-  /** Generates and persists a new memberId for the given user. Throws if the user
-   * already has one or if the user is not found. */
+  /** Assigns the next available member ID to the given user (self-service flow). */
   async assignMemberId(userId: string): Promise<string> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
     if (user.memberId) throw new BadRequestException('User already has a member ID');
 
-    // Use an advisory lock inside a transaction so concurrent calls serialise
-    // rather than racing to grab the same generated ID.
-    const memberId = await this.userRepo.manager.transaction(async (em) => {
-      // Lock key 987654321 is an arbitrary constant that namespaces this lock.
-      await em.query('SELECT pg_advisory_xact_lock(987654321)');
-
-      const year = new Date().getFullYear();
-      const prefix = `CSEDIU-${year}-`;
-      const rows = await em.query<{ max: string | null }[]>(
-        `SELECT MAX(CAST(SUBSTRING(member_id FROM $1) AS INTEGER)) AS max
-         FROM users
-         WHERE member_id LIKE $2`,
-        [prefix.length + 1, `${prefix}%`],
-      );
-      const next = (parseInt(rows[0]?.max ?? '0', 10) || 0) + 1;
-      const newMemberId = `${prefix}${String(next).padStart(4, '0')}`;
-
-      await em.update(User, userId, { memberId: newMemberId });
-      return newMemberId;
-    });
-
+    const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
+    await this.userRepo.update(userId, { memberId });
     return memberId;
   }
 
