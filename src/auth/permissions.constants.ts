@@ -58,6 +58,10 @@ export const PERMISSIONS = {
   // Gallery management
   GALLERY_READ: 'gallery:read',
   GALLERY_WRITE: 'gallery:write',
+
+  // News management
+  NEWS_READ: 'news:read',
+  NEWS_WRITE: 'news:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -188,5 +192,15 @@ export const ALL_PERMISSIONS: {
     key: 'gallery:write',
     description: 'Create, update and delete gallery albums and media items',
     group: 'Gallery',
+  },
+  {
+    key: 'news:read',
+    description: 'View all news articles',
+    group: 'News',
+  },
+  {
+    key: 'news:write',
+    description: 'Create, update and delete news articles',
+    group: 'News',
   },
 ];

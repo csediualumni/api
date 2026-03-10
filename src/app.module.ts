@@ -40,6 +40,8 @@ import { Campaign } from './entities/campaign.entity';
 import { GalleryModule } from './gallery/gallery.module';
 import { GalleryAlbum } from './entities/gallery-album.entity';
 import { GalleryItem } from './entities/gallery-item.entity';
+import { NewsModule } from './news/news.module';
+import { NewsArticle } from './entities/news-article.entity';
 
 @Module({
   imports: [
@@ -73,6 +75,7 @@ import { GalleryItem } from './entities/gallery-item.entity';
           Campaign,
           GalleryAlbum,
           GalleryItem,
+          NewsArticle,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -92,6 +95,7 @@ import { GalleryItem } from './entities/gallery-item.entity';
     EventsModule,
     CampaignsModule,
     GalleryModule,
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
