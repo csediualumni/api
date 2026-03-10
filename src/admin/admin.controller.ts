@@ -22,9 +22,25 @@ import { PERMISSIONS } from '../auth/permissions.constants';
 import { UsersService, ImportMemberRow } from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
-import { MilestonesService, CreateMilestoneDto, UpdateMilestoneDto } from '../milestones/milestones.service';
-import { CommitteesService, CreateCommitteeDto, UpdateCommitteeDto, AddCommitteeMemberDto, UpdateCommitteeMemberDto, SetDesignationMappingDto } from '../committees/committees.service';
-import { EventsService, CreateEventDto, UpdateEventDto } from '../events/events.service';
+import type { ContactTicketStatus } from '../entities/contact-ticket.entity';
+import {
+  MilestonesService,
+  CreateMilestoneDto,
+  UpdateMilestoneDto,
+} from '../milestones/milestones.service';
+import {
+  CommitteesService,
+  CreateCommitteeDto,
+  UpdateCommitteeDto,
+  AddCommitteeMemberDto,
+  UpdateCommitteeMemberDto,
+  SetDesignationMappingDto,
+} from '../committees/committees.service';
+import {
+  EventsService,
+  CreateEventDto,
+  UpdateEventDto,
+} from '../events/events.service';
 import { UploadService } from '../upload/upload.service';
 import { IsArray, IsString, IsNotEmpty, IsIn, IsUUID } from 'class-validator';
 
@@ -73,7 +89,9 @@ export class AdminController {
 
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowed.includes(file.mimetype))
-      throw new BadRequestException('Only JPEG, PNG, WebP and GIF images are allowed');
+      throw new BadRequestException(
+        'Only JPEG, PNG, WebP and GIF images are allowed',
+      );
 
     const maxBytes = 5 * 1024 * 1024; // 5 MB
     if (file.size > maxBytes)
@@ -112,7 +130,8 @@ export class AdminController {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = utils.sheet_to_json<ImportMemberRow>(sheet, { defval: '' });
 
-    if (rows.length === 0) throw new BadRequestException('The file contains no data rows');
+    if (rows.length === 0)
+      throw new BadRequestException('The file contains no data rows');
 
     return this.users.bulkImportMembers(rows);
   }
@@ -183,14 +202,20 @@ export class AdminController {
 
   @Patch('contact/tickets/:id/status')
   @RequirePermissions(PERMISSIONS.CONTACT_WRITE)
-  updateTicketStatus(@Param('id') id: string, @Body() dto: UpdateTicketStatusDto) {
-    return this.contact.updateStatus(id, dto.status as any);
+  updateTicketStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateTicketStatusDto,
+  ) {
+    return this.contact.updateStatus(id, dto.status as ContactTicketStatus);
   }
 
   @Post('contact/tickets/:id/comments')
   @RequirePermissions(PERMISSIONS.CONTACT_WRITE)
   addComment(@Param('id') id: string, @Body() dto: AddTicketCommentDto) {
-    return this.contact.addComment(id, { body: dto.body, authorName: dto.authorName });
+    return this.contact.addComment(id, {
+      body: dto.body,
+      authorName: dto.authorName,
+    });
   }
 
   @Delete('contact/tickets/:id')
@@ -256,13 +281,19 @@ export class AdminController {
 
   @Post('committees/:id/members')
   @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
-  addCommitteeMember(@Param('id') id: string, @Body() dto: AddCommitteeMemberDto) {
+  addCommitteeMember(
+    @Param('id') id: string,
+    @Body() dto: AddCommitteeMemberDto,
+  ) {
     return this.committeesService.addMember(id, dto);
   }
 
   @Patch('committees/members/:memberId')
   @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
-  updateCommitteeMember(@Param('memberId') memberId: string, @Body() dto: UpdateCommitteeMemberDto) {
+  updateCommitteeMember(
+    @Param('memberId') memberId: string,
+    @Body() dto: UpdateCommitteeMemberDto,
+  ) {
     return this.committeesService.updateMember(memberId, dto);
   }
 
@@ -289,7 +320,10 @@ export class AdminController {
 
   @Patch('designation-roles/:id')
   @RequirePermissions(PERMISSIONS.COMMITTEES_WRITE)
-  updateDesignationMapping(@Param('id') id: string, @Body() dto: UpdateDesignationMappingDto) {
+  updateDesignationMapping(
+    @Param('id') id: string,
+    @Body() dto: UpdateDesignationMappingDto,
+  ) {
     return this.committeesService.updateMapping(id, dto.roleId);
   }
 

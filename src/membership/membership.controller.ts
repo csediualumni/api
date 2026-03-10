@@ -76,10 +76,7 @@ export class MembershipController {
   @Patch('requests/:id/approve')
   @UseGuards(PermissionsGuard)
   @RequirePermissions(PERMISSIONS.MEMBERSHIP_REVIEW)
-  approve(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  approve(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.membership.approve(id, req.user.id);
   }
 

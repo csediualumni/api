@@ -196,7 +196,9 @@ export class UsersService {
   async assignGuestRole(userId: string): Promise<void> {
     const guestRole = await this.roleRepo.findOne({ where: { name: 'guest' } });
     if (!guestRole) {
-      this.logger.warn('assignGuestRole: guest role not found in DB — skipping');
+      this.logger.warn(
+        'assignGuestRole: guest role not found in DB — skipping',
+      );
       return;
     }
     const exists = await this.userRoleRepo.findOne({
@@ -340,8 +342,13 @@ export class UsersService {
   // ── Bulk member import ───────────────────────────────────────
 
   async bulkImportMembers(rows: ImportMemberRow[]): Promise<BulkImportResult> {
-    const memberRole = await this.roleRepo.findOne({ where: { name: 'member' } });
-    if (!memberRole) throw new Error('"member" role not found in database — run the seeder first');
+    const memberRole = await this.roleRepo.findOne({
+      where: { name: 'member' },
+    });
+    if (!memberRole)
+      throw new Error(
+        '"member" role not found in database — run the seeder first',
+      );
 
     let created = 0;
     let updated = 0;
@@ -351,46 +358,72 @@ export class UsersService {
       const row = rows[i];
       const rowNum = i + 2; // 1-based row number accounting for header
 
-      const rawEmail = String(row.email ?? '').trim().toLowerCase();
+      const rawEmail = String(row.email ?? '')
+        .trim()
+        .toLowerCase();
       if (!rawEmail || !rawEmail.includes('@')) {
-        errors.push({ row: rowNum, email: rawEmail, reason: 'Missing or invalid email' });
+        errors.push({
+          row: rowNum,
+          email: rawEmail,
+          reason: 'Missing or invalid email',
+        });
         continue;
       }
       if (!row.displayName || String(row.displayName).trim() === '') {
-        errors.push({ row: rowNum, email: rawEmail, reason: 'Missing displayName' });
+        errors.push({
+          row: rowNum,
+          email: rawEmail,
+          reason: 'Missing displayName',
+        });
         continue;
       }
       if (row.batch == null || String(row.batch).trim() === '') {
-        errors.push({ row: rowNum, email: rawEmail, reason: 'Missing batch (graduation year)' });
+        errors.push({
+          row: rowNum,
+          email: rawEmail,
+          reason: 'Missing batch (graduation year)',
+        });
         continue;
       }
       const batchNum = Number(row.batch);
       if (isNaN(batchNum)) {
-        errors.push({ row: rowNum, email: rawEmail, reason: `Invalid batch "${row.batch}" — must be a numeric year` });
+        errors.push({
+          row: rowNum,
+          email: rawEmail,
+          reason: `Invalid batch "${row.batch}" — must be a numeric year`,
+        });
         continue;
       }
 
       const profileFields: Partial<User> = {
         displayName: String(row.displayName).trim(),
         batch: batchNum,
-        ...(row.phone    ? { phone:    String(row.phone).trim()    } : {}),
+        ...(row.phone ? { phone: String(row.phone).trim() } : {}),
         ...(row.jobTitle ? { jobTitle: String(row.jobTitle).trim() } : {}),
-        ...(row.company  ? { company:  String(row.company).trim()  } : {}),
+        ...(row.company ? { company: String(row.company).trim() } : {}),
         ...(row.industry ? { industry: String(row.industry).trim() } : {}),
-        ...(row.city     ? { city:     String(row.city).trim()     } : {}),
-        ...(row.country  ? { country:  String(row.country).trim()  } : {}),
+        ...(row.city ? { city: String(row.city).trim() } : {}),
+        ...(row.country ? { country: String(row.country).trim() } : {}),
         ...(row.linkedin ? { linkedin: String(row.linkedin).trim() } : {}),
-        ...(row.github   ? { github:   String(row.github).trim()   } : {}),
-        ...(row.twitter  ? { twitter:  String(row.twitter).trim()  } : {}),
-        ...(row.website  ? { website:  String(row.website).trim()  } : {}),
+        ...(row.github ? { github: String(row.github).trim() } : {}),
+        ...(row.twitter ? { twitter: String(row.twitter).trim() } : {}),
+        ...(row.website ? { website: String(row.website).trim() } : {}),
       };
 
       try {
         let user = await this.userRepo.findOne({ where: { email: rawEmail } });
         if (!user) {
           user = await this.userRepo.save(
-            this.userRepo.create({ email: rawEmail, password: null, ...profileFields }),
+            this.userRepo.create({
+              email: rawEmail,
+              password: null,
+              ...profileFields,
+            }),
           );
+          // Generate and assign a memberId for newly imported members
+          const memberId = await this.generateMemberId();
+          await this.userRepo.update(user.id, { memberId });
+          user.memberId = memberId;
           created++;
         } else {
           await this.userRepo.update(user.id, profileFields);
@@ -402,14 +435,36 @@ export class UsersService {
           where: { userId: user.id, roleId: memberRole.id },
         });
         if (!hasRole) {
-          await this.userRoleRepo.save({ userId: user.id, roleId: memberRole.id });
+          await this.userRoleRepo.save({
+            userId: user.id,
+            roleId: memberRole.id,
+          });
         }
-      } catch (err: any) {
-        errors.push({ row: rowNum, email: rawEmail, reason: err?.message ?? 'Unexpected error' });
+      } catch (err: unknown) {
+        errors.push({
+          row: rowNum,
+          email: rawEmail,
+          reason: err instanceof Error ? err.message : 'Unexpected error',
+        });
       }
     }
 
     return { created, updated, errors };
+  }
+
+  // ── Member ID generation ─────────────────────────────────────
+
+  private async generateMemberId(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `CSEDIU-${year}-`;
+    const rows = await this.userRepo.manager.query<{ max: string | null }[]>(
+      `SELECT MAX(CAST(SUBSTRING(member_id FROM $1) AS INTEGER)) AS max
+       FROM users
+       WHERE member_id LIKE $2`,
+      [prefix.length + 1, `${prefix}%`],
+    );
+    const next = (parseInt(rows[0]?.max ?? '0', 10) || 0) + 1;
+    return `${prefix}${String(next).padStart(4, '0')}`;
   }
 
   // ── Password reset ───────────────────────────────────────────

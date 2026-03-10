@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ContactTicket, ContactTicketStatus } from '../entities/contact-ticket.entity';
+import type { FindOptionsOrder } from 'typeorm';
+import {
+  ContactTicket,
+  ContactTicketStatus,
+} from '../entities/contact-ticket.entity';
 import { ContactTicketComment } from '../entities/contact-ticket-comment.entity';
 import { MailService } from '../mail/mail.service';
 
@@ -48,7 +52,14 @@ export class ContactService {
     const saved = await this.ticketRepo.save(ticket);
 
     // Send confirmation to submitter (fire & forget)
-    this.mail.sendContactTicketCreated(saved.email, saved.name, saved.subject, saved.id).catch(() => null);
+    this.mail
+      .sendContactTicketCreated(
+        saved.email,
+        saved.name,
+        saved.subject,
+        saved.id,
+      )
+      .catch(() => null);
 
     return saved;
   }
@@ -66,15 +77,21 @@ export class ContactService {
     const ticket = await this.ticketRepo.findOne({
       where: { id },
       relations: ['comments'],
-      order: { comments: { createdAt: 'ASC' } } as any,
+      order: {
+        comments: { createdAt: 'ASC' },
+      } as FindOptionsOrder<ContactTicket>,
     });
     if (!ticket) throw new NotFoundException('Ticket not found.');
     return ticket;
   }
 
-  async updateStatus(id: string, status: ContactTicketStatus): Promise<ContactTicket> {
+  async updateStatus(
+    id: string,
+    status: ContactTicketStatus,
+  ): Promise<ContactTicket> {
     const valid: ContactTicketStatus[] = ['open', 'in_progress', 'resolved'];
-    if (!valid.includes(status)) throw new BadRequestException('Invalid status.');
+    if (!valid.includes(status))
+      throw new BadRequestException('Invalid status.');
 
     const ticket = await this.findOne(id);
     const oldStatus = ticket.status;
@@ -82,7 +99,14 @@ export class ContactService {
     const saved = await this.ticketRepo.save(ticket);
 
     if (oldStatus !== status) {
-      this.mail.sendContactTicketStatusChanged(ticket.email, ticket.name, ticket.subject, status).catch(() => null);
+      this.mail
+        .sendContactTicketStatusChanged(
+          ticket.email,
+          ticket.name,
+          ticket.subject,
+          status,
+        )
+        .catch(() => null);
     }
 
     return this.findOne(saved.id);
@@ -99,7 +123,15 @@ export class ContactService {
     await this.commentRepo.save(comment);
 
     // Notify submitter
-    this.mail.sendContactTicketComment(ticket.email, ticket.name, ticket.subject, dto.authorName, dto.body).catch(() => null);
+    this.mail
+      .sendContactTicketComment(
+        ticket.email,
+        ticket.name,
+        ticket.subject,
+        dto.authorName,
+        dto.body,
+      )
+      .catch(() => null);
 
     return this.findOne(ticket.id);
   }

@@ -58,7 +58,12 @@ export class Event {
   seats: number | null;
 
   /** External or internal registration URL (optional) */
-  @Column({ type: 'varchar', nullable: true, default: null, name: 'registration_url' })
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    default: null,
+    name: 'registration_url',
+  })
   registrationUrl: string | null;
 
   /** Image URL for the event cover (optional) */

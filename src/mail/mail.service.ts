@@ -261,7 +261,10 @@ export class MailService {
     subject: string,
     ticketId: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
     const shortId = ticketId.slice(0, 8).toUpperCase();
 
     await this.transporter.sendMail({
@@ -297,7 +300,10 @@ export class MailService {
     subject: string,
     newStatus: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
 
     const statusLabel: Record<string, string> = {
       open: 'Open',
@@ -346,7 +352,10 @@ export class MailService {
     authorName: string,
     body: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
 
     await this.transporter.sendMail({
       from: `"CSE DIU Alumni" <${from}>`,
@@ -380,7 +389,10 @@ export class MailService {
     amount: number,
     paymentUrl: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
     const shortId = invoiceId.slice(0, 8).toUpperCase();
     const formattedAmount = `৳${amount.toLocaleString()}`;
 
@@ -418,7 +430,9 @@ export class MailService {
       `,
     });
 
-    this.logger.log(`Membership invoice email sent to ${to} for invoice ${invoiceId}`);
+    this.logger.log(
+      `Membership invoice email sent to ${to} for invoice ${invoiceId}`,
+    );
   }
 
   async sendMembershipApproved(
@@ -427,7 +441,10 @@ export class MailService {
     dashboardUrl: string,
     memberId: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
 
     await this.transporter.sendMail({
       from: `"CSE DIU Alumni" <${from}>`,
@@ -469,7 +486,10 @@ export class MailService {
     reason: string,
     refundRequired: boolean,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
 
     const refundSection = refundRequired
       ? `<div style="background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;padding:12px 16px;margin:0 0 20px;color:#92400e;font-size:13px;">

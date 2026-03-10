@@ -257,7 +257,8 @@ export class MembershipService {
     adminUserId: string,
   ): Promise<MembershipApplicationDto> {
     const app = await this.appRepo.findOne({ where: { id: applicationId } });
-    if (!app) throw new NotFoundException(`Application ${applicationId} not found.`);
+    if (!app)
+      throw new NotFoundException(`Application ${applicationId} not found.`);
 
     if (app.status === 'approved') {
       throw new BadRequestException('Application is already approved.');
@@ -273,11 +274,15 @@ export class MembershipService {
     await this.appRepo.save(app);
 
     // Assign a human-readable member ID if the user doesn't have one yet
-    const existingUser = await this.userRepo.findOne({ where: { id: app.userId } });
+    const existingUser = await this.userRepo.findOne({
+      where: { id: app.userId },
+    });
     if (existingUser && !existingUser.memberId) {
       const memberId = await this.generateMemberId();
       await this.userRepo.update(app.userId, { memberId });
-      this.logger.log(`[APPROVE] Assigned memberId=${memberId} to userId=${app.userId}`);
+      this.logger.log(
+        `[APPROVE] Assigned memberId=${memberId} to userId=${app.userId}`,
+      );
     }
 
     // Swap roles: remove guest, add member
@@ -287,14 +292,20 @@ export class MembershipService {
     ]);
 
     if (guestRole) {
-      await this.userRoleRepo.delete({ userId: app.userId, roleId: guestRole.id });
+      await this.userRoleRepo.delete({
+        userId: app.userId,
+        roleId: guestRole.id,
+      });
     }
     if (memberRole) {
       const alreadyMember = await this.userRoleRepo.findOne({
         where: { userId: app.userId, roleId: memberRole.id },
       });
       if (!alreadyMember) {
-        await this.userRoleRepo.save({ userId: app.userId, roleId: memberRole.id });
+        await this.userRoleRepo.save({
+          userId: app.userId,
+          roleId: memberRole.id,
+        });
       }
     }
 
@@ -324,10 +335,13 @@ export class MembershipService {
     reason: string,
   ): Promise<MembershipApplicationDto> {
     const app = await this.appRepo.findOne({ where: { id: applicationId } });
-    if (!app) throw new NotFoundException(`Application ${applicationId} not found.`);
+    if (!app)
+      throw new NotFoundException(`Application ${applicationId} not found.`);
 
     if (app.status === 'approved') {
-      throw new BadRequestException('Cannot reject an already-approved application.');
+      throw new BadRequestException(
+        'Cannot reject an already-approved application.',
+      );
     }
     if (app.status === 'rejected') {
       throw new BadRequestException('Application is already rejected.');

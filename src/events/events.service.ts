@@ -71,7 +71,10 @@ export class UpdateEventDto {
   @IsOptional() @IsInt() @Min(0) ticketPrice?: number | null;
 }
 
-export type EventWithMeta = Event & { rsvpCount: number; seatsLeft: number | null };
+export type EventWithMeta = Event & {
+  rsvpCount: number;
+  seatsLeft: number | null;
+};
 
 @Injectable()
 export class EventsService {
@@ -98,7 +101,9 @@ export class EventsService {
       .groupBy('rsvp.event_id')
       .getRawMany();
 
-    const countMap = new Map(counts.map((r) => [r.event_id, parseInt(r.cnt, 10)]));
+    const countMap = new Map(
+      counts.map((r) => [r.event_id, parseInt(r.cnt, 10)]),
+    );
 
     return events.map((e) => {
       const rsvpCount = countMap.get(e.id) ?? 0;
@@ -168,9 +173,11 @@ export class EventsService {
     if (dto.imageUrl !== undefined) event.imageUrl = dto.imageUrl;
     if (dto.color !== undefined) event.color = dto.color;
     if (dto.featured !== undefined) event.featured = dto.featured;
-    if (dto.registrationUrl !== undefined) event.registrationUrl = dto.registrationUrl;
+    if (dto.registrationUrl !== undefined)
+      event.registrationUrl = dto.registrationUrl;
     if (dto.sortOrder !== undefined) event.sortOrder = dto.sortOrder;
-    if (dto.ticketPrice !== undefined) event.ticketPrice = dto.ticketPrice ?? null;
+    if (dto.ticketPrice !== undefined)
+      event.ticketPrice = dto.ticketPrice ?? null;
 
     const saved = await this.eventRepo.save(event);
     const [enriched] = await this.attachMeta([saved]);
@@ -188,7 +195,12 @@ export class EventsService {
   async rsvp(
     eventId: string,
     userId: string,
-  ): Promise<{ message: string; rsvp: EventRsvp; invoiceId?: string; paymentUrl?: string }> {
+  ): Promise<{
+    message: string;
+    rsvp: EventRsvp;
+    invoiceId?: string;
+    paymentUrl?: string;
+  }> {
     const event = await this.eventRepo.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found.');
 
@@ -209,8 +221,14 @@ export class EventsService {
       where: { eventId, userId },
     });
 
-    if (existing && (existing.status === 'registered' || existing.status === 'pending_payment')) {
-      throw new BadRequestException('You are already registered for this event.');
+    if (
+      existing &&
+      (existing.status === 'registered' ||
+        existing.status === 'pending_payment')
+    ) {
+      throw new BadRequestException(
+        'You are already registered for this event.',
+      );
     }
 
     // ── Paid event path ──────────────────────────────────────────────────────
@@ -234,12 +252,18 @@ export class EventsService {
         rsvp = await this.rsvpRepo.save(existing);
       } else {
         rsvp = await this.rsvpRepo.save(
-          this.rsvpRepo.create({ eventId, userId, status: 'pending_payment', invoiceId: savedInvoice.id }),
+          this.rsvpRepo.create({
+            eventId,
+            userId,
+            status: 'pending_payment',
+            invoiceId: savedInvoice.id,
+          }),
         );
       }
 
       return {
-        message: 'Invoice created. Please complete payment to confirm your seat.',
+        message:
+          'Invoice created. Please complete payment to confirm your seat.',
         rsvp,
         invoiceId: savedInvoice.id,
         paymentUrl: `/payment?invoiceId=${savedInvoice.id}`,
@@ -264,14 +288,24 @@ export class EventsService {
       return { message: 'Successfully registered.', rsvp: saved };
     }
 
-    const rsvp = this.rsvpRepo.create({ eventId, userId, status: 'registered' });
+    const rsvp = this.rsvpRepo.create({
+      eventId,
+      userId,
+      status: 'registered',
+    });
     const saved = await this.rsvpRepo.save(rsvp);
     return { message: 'Successfully registered.', rsvp: saved };
   }
 
-  async cancelRsvp(eventId: string, userId: string): Promise<{ message: string }> {
+  async cancelRsvp(
+    eventId: string,
+    userId: string,
+  ): Promise<{ message: string }> {
     const rsvp = await this.rsvpRepo.findOne({
-      where: [{ eventId, userId, status: 'registered' }, { eventId, userId, status: 'pending_payment' }],
+      where: [
+        { eventId, userId, status: 'registered' },
+        { eventId, userId, status: 'pending_payment' },
+      ],
     });
     if (!rsvp) throw new NotFoundException('No active registration found.');
 
@@ -284,7 +318,10 @@ export class EventsService {
         );
       }
       // Mark associated invoice as refunded
-      await this.invoiceRepo.update({ id: rsvp.invoiceId }, { status: 'refunded' });
+      await this.invoiceRepo.update(
+        { id: rsvp.invoiceId },
+        { status: 'refunded' },
+      );
     }
 
     rsvp.status = 'cancelled';
@@ -318,7 +355,10 @@ export class EventsService {
     const event = await this.eventRepo.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found.');
     return this.rsvpRepo.find({
-      where: [{ eventId, status: 'registered' }, { eventId, status: 'pending_payment' }],
+      where: [
+        { eventId, status: 'registered' },
+        { eventId, status: 'pending_payment' },
+      ],
       relations: { user: true },
       order: { createdAt: 'ASC' },
     });

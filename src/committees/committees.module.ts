@@ -8,7 +8,14 @@ import { CommitteesService } from './committees.service';
 import { CommitteesController } from './committees.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Committee, CommitteeMember, DesignationRoleMapping, UserRole])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Committee,
+      CommitteeMember,
+      DesignationRoleMapping,
+      UserRole,
+    ]),
+  ],
   providers: [CommitteesService],
   controllers: [CommitteesController],
   exports: [CommitteesService],

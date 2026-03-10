@@ -95,10 +95,7 @@ async function main() {
     'member',
     'Regular member — full access to alumni content',
     true,
-    [
-      perm('profile:read').id,
-      perm('profile:write').id,
-    ],
+    [perm('profile:read').id, perm('profile:write').id],
   );
   await upsertRole(
     roleRepo,
@@ -106,10 +103,7 @@ async function main() {
     'guest',
     'Newly registered user — can apply for membership',
     true,
-    [
-      perm('membership:apply').id,
-      perm('profile:write').id,
-    ],
+    [perm('membership:apply').id, perm('profile:write').id],
   );
 
   console.log(`  ✓ Roles: super_admin, admin, member, guest`);
@@ -118,7 +112,9 @@ async function main() {
   console.log('▶ Seeding committee roles…');
 
   const committeePresidentRole = await upsertRole(
-    roleRepo, rolePermRepo, 'committee_president',
+    roleRepo,
+    rolePermRepo,
+    'committee_president',
     'Active committee — President / Vice-President',
     false,
     [
@@ -137,7 +133,9 @@ async function main() {
   );
 
   const committeeSecretaryRole = await upsertRole(
-    roleRepo, rolePermRepo, 'committee_secretary',
+    roleRepo,
+    rolePermRepo,
+    'committee_secretary',
     'Active committee — Secretary',
     false,
     [
@@ -150,7 +148,9 @@ async function main() {
   );
 
   const committeeTreasurerRole = await upsertRole(
-    roleRepo, rolePermRepo, 'committee_treasurer',
+    roleRepo,
+    rolePermRepo,
+    'committee_treasurer',
     'Active committee — Treasurer',
     false,
     [
@@ -161,33 +161,36 @@ async function main() {
   );
 
   const committeeMemberRole = await upsertRole(
-    roleRepo, rolePermRepo, 'committee_member',
+    roleRepo,
+    rolePermRepo,
+    'committee_member',
     'Active committee — Executive Member / Adviser',
     false,
-    [
-      perm('users:read').id,
-      perm('contact:read').id,
-    ],
+    [perm('users:read').id, perm('contact:read').id],
   );
 
-  console.log(`  ✓ Committee roles: committee_president, committee_secretary, committee_treasurer, committee_member`);
+  console.log(
+    `  ✓ Committee roles: committee_president, committee_secretary, committee_treasurer, committee_member`,
+  );
 
   // ── 3. Default designation → role mappings ──────────────────
   console.log('▶ Seeding designation role mappings…');
 
   const defaultMappings: { designation: string; roleId: string }[] = [
-    { designation: 'President',          roleId: committeePresidentRole.id },
-    { designation: 'Vice President',     roleId: committeePresidentRole.id },
-    { designation: 'General Secretary',  roleId: committeeSecretaryRole.id },
-    { designation: 'Joint Secretary',    roleId: committeeSecretaryRole.id },
-    { designation: 'Treasurer',          roleId: committeeTreasurerRole.id },
+    { designation: 'President', roleId: committeePresidentRole.id },
+    { designation: 'Vice President', roleId: committeePresidentRole.id },
+    { designation: 'General Secretary', roleId: committeeSecretaryRole.id },
+    { designation: 'Joint Secretary', roleId: committeeSecretaryRole.id },
+    { designation: 'Treasurer', roleId: committeeTreasurerRole.id },
     { designation: 'Assistant Treasurer', roleId: committeeTreasurerRole.id },
-    { designation: 'Executive Member',   roleId: committeeMemberRole.id },
-    { designation: 'Adviser',            roleId: committeeMemberRole.id },
+    { designation: 'Executive Member', roleId: committeeMemberRole.id },
+    { designation: 'Adviser', roleId: committeeMemberRole.id },
   ];
 
   for (const dm of defaultMappings) {
-    const existing = await mappingRepo.findOne({ where: { designation: dm.designation } });
+    const existing = await mappingRepo.findOne({
+      where: { designation: dm.designation },
+    });
     if (existing) {
       await mappingRepo.save({ ...existing, roleId: dm.roleId });
     } else {

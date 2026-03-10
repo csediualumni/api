@@ -1,7 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 import { Committee } from '../entities/committee.entity';
 import { CommitteeMember } from '../entities/committee-member.entity';
 import { DesignationRoleMapping } from '../entities/designation-role-mapping.entity';
@@ -78,7 +86,11 @@ export class CommitteesService {
    * Looks up the role mapped to `designation`, then grants or revokes it.
    * Safe to call multiple times (upsert-safe, ignores NOT FOUND on revoke).
    */
-  private async syncRole(userId: string, designation: string, grant: boolean): Promise<void> {
+  private async syncRole(
+    userId: string,
+    designation: string,
+    grant: boolean,
+  ): Promise<void> {
     const mapping = await this.mappingRepo.findOne({ where: { designation } });
     if (!mapping?.roleId) return; // no mapping configured → nothing to do
 
@@ -108,14 +120,22 @@ export class CommitteesService {
 
   /** Grant roles for all members of a committee. */
   private async grantAllMemberRoles(committee: Committee): Promise<void> {
-    const members = await this.memberRepo.find({ where: { committeeId: committee.id } });
-    await Promise.all(members.map((m) => this.syncRole(m.userId, m.designation, true)));
+    const members = await this.memberRepo.find({
+      where: { committeeId: committee.id },
+    });
+    await Promise.all(
+      members.map((m) => this.syncRole(m.userId, m.designation, true)),
+    );
   }
 
   /** Revoke roles for all members of a committee. */
   private async revokeAllMemberRoles(committee: Committee): Promise<void> {
-    const members = await this.memberRepo.find({ where: { committeeId: committee.id } });
-    await Promise.all(members.map((m) => this.syncRole(m.userId, m.designation, false)));
+    const members = await this.memberRepo.find({
+      where: { committeeId: committee.id },
+    });
+    await Promise.all(
+      members.map((m) => this.syncRole(m.userId, m.designation, false)),
+    );
   }
 
   // ── Committee CRUD ─────────────────────────────────────────────────
@@ -123,7 +143,15 @@ export class CommitteesService {
   findAll(): Promise<Committee[]> {
     return this.committeeRepo.find({
       relations: { members: { user: true } },
-      select: { members: { id: true, designation: true, sortOrder: true, note: true, user: USER_SELECT } },
+      select: {
+        members: {
+          id: true,
+          designation: true,
+          sortOrder: true,
+          note: true,
+          user: USER_SELECT,
+        },
+      },
       order: { isCurrent: 'DESC', sortOrder: 'ASC', createdAt: 'DESC' },
     });
   }
@@ -132,7 +160,15 @@ export class CommitteesService {
     const c = await this.committeeRepo.findOne({
       where: { id },
       relations: { members: { user: true } },
-      select: { members: { id: true, designation: true, sortOrder: true, note: true, user: USER_SELECT } },
+      select: {
+        members: {
+          id: true,
+          designation: true,
+          sortOrder: true,
+          note: true,
+          user: USER_SELECT,
+        },
+      },
     });
     if (!c) throw new NotFoundException('Committee not found.');
     return c;
@@ -141,10 +177,16 @@ export class CommitteesService {
   async create(dto: CreateCommitteeDto): Promise<Committee> {
     if (dto.isCurrent) {
       // Retire current committee first, revoking their roles
-      const current = await this.committeeRepo.findOne({ where: { isCurrent: true } });
+      const current = await this.committeeRepo.findOne({
+        where: { isCurrent: true },
+      });
       if (current) await this.revokeAllMemberRoles(current);
-      await this.committeeRepo.createQueryBuilder()
-        .update().set({ isCurrent: false }).where('1=1').execute();
+      await this.committeeRepo
+        .createQueryBuilder()
+        .update()
+        .set({ isCurrent: false })
+        .where('1=1')
+        .execute();
     }
     const c = this.committeeRepo.create({
       term: dto.term,
@@ -163,10 +205,16 @@ export class CommitteesService {
 
     if (dto.isCurrent && !wasCurrentBefore) {
       // Retire any existing current committee, revoke their roles
-      const current = await this.committeeRepo.findOne({ where: { isCurrent: true } });
+      const current = await this.committeeRepo.findOne({
+        where: { isCurrent: true },
+      });
       if (current) await this.revokeAllMemberRoles(current);
-      await this.committeeRepo.createQueryBuilder()
-        .update().set({ isCurrent: false }).where('1=1').execute();
+      await this.committeeRepo
+        .createQueryBuilder()
+        .update()
+        .set({ isCurrent: false })
+        .where('1=1')
+        .execute();
     }
 
     Object.assign(c, {
@@ -198,7 +246,10 @@ export class CommitteesService {
 
   // ── Member management ──────────────────────────────────────────────
 
-  async addMember(committeeId: string, dto: AddCommitteeMemberDto): Promise<CommitteeMember> {
+  async addMember(
+    committeeId: string,
+    dto: AddCommitteeMemberDto,
+  ): Promise<CommitteeMember> {
     const committee = await this.findOne(committeeId);
     const m = this.memberRepo.create({
       committeeId,
@@ -220,9 +271,14 @@ export class CommitteesService {
     }) as Promise<CommitteeMember>;
   }
 
-  async updateMember(memberId: string, dto: UpdateCommitteeMemberDto): Promise<CommitteeMember> {
+  async updateMember(
+    memberId: string,
+    dto: UpdateCommitteeMemberDto,
+  ): Promise<CommitteeMember> {
     const m = await this.memberRepo.findOneOrFail({ where: { id: memberId } });
-    const committee = await this.committeeRepo.findOneOrFail({ where: { id: m.committeeId } });
+    const committee = await this.committeeRepo.findOneOrFail({
+      where: { id: m.committeeId },
+    });
     const oldDesignation = m.designation;
 
     Object.assign(m, {
@@ -233,7 +289,11 @@ export class CommitteesService {
     await this.memberRepo.save(m);
 
     // If designation changed on a current committee, swap the roles
-    if (committee.isCurrent && dto.designation && dto.designation !== oldDesignation) {
+    if (
+      committee.isCurrent &&
+      dto.designation &&
+      dto.designation !== oldDesignation
+    ) {
       await this.syncRole(m.userId, oldDesignation, false);
       await this.syncRole(m.userId, dto.designation, true);
     }
@@ -246,7 +306,9 @@ export class CommitteesService {
 
   async removeMember(memberId: string): Promise<void> {
     const m = await this.memberRepo.findOneOrFail({ where: { id: memberId } });
-    const committee = await this.committeeRepo.findOneOrFail({ where: { id: m.committeeId } });
+    const committee = await this.committeeRepo.findOneOrFail({
+      where: { id: m.committeeId },
+    });
     await this.memberRepo.remove(m);
     if (committee.isCurrent) {
       await this.syncRole(m.userId, m.designation, false);
@@ -262,22 +324,38 @@ export class CommitteesService {
     });
   }
 
-  async setMapping(dto: SetDesignationMappingDto): Promise<DesignationRoleMapping> {
-    const existing = await this.mappingRepo.findOne({ where: { designation: dto.designation } });
+  async setMapping(
+    dto: SetDesignationMappingDto,
+  ): Promise<DesignationRoleMapping> {
+    const existing = await this.mappingRepo.findOne({
+      where: { designation: dto.designation },
+    });
     if (existing) {
       existing.roleId = dto.roleId;
       return this.mappingRepo.save(existing);
     }
-    const m = this.mappingRepo.create({ designation: dto.designation, roleId: dto.roleId });
+    const m = this.mappingRepo.create({
+      designation: dto.designation,
+      roleId: dto.roleId,
+    });
     const saved = await this.mappingRepo.save(m);
-    return this.mappingRepo.findOne({ where: { id: saved.id }, relations: { role: true } }) as Promise<DesignationRoleMapping>;
+    return this.mappingRepo.findOne({
+      where: { id: saved.id },
+      relations: { role: true },
+    }) as Promise<DesignationRoleMapping>;
   }
 
-  async updateMapping(id: string, roleId: string): Promise<DesignationRoleMapping> {
+  async updateMapping(
+    id: string,
+    roleId: string,
+  ): Promise<DesignationRoleMapping> {
     const m = await this.mappingRepo.findOneOrFail({ where: { id } });
     m.roleId = roleId;
     await this.mappingRepo.save(m);
-    return this.mappingRepo.findOne({ where: { id }, relations: { role: true } }) as Promise<DesignationRoleMapping>;
+    return this.mappingRepo.findOne({
+      where: { id },
+      relations: { role: true },
+    }) as Promise<DesignationRoleMapping>;
   }
 
   async removeMapping(id: string): Promise<void> {
@@ -285,4 +363,3 @@ export class CommitteesService {
     await this.mappingRepo.remove(m);
   }
 }
-

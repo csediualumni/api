@@ -9,7 +9,15 @@ import { EventsModule } from '../events/events.module';
 import { UploadModule } from '../upload/upload.module';
 
 @Module({
-  imports: [UsersModule, NewsletterModule, ContactModule, MilestonesModule, CommitteesModule, EventsModule, UploadModule],
+  imports: [
+    UsersModule,
+    NewsletterModule,
+    ContactModule,
+    MilestonesModule,
+    CommitteesModule,
+    EventsModule,
+    UploadModule,
+  ],
   controllers: [AdminController],
 })
 export class AdminModule {}

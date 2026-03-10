@@ -51,7 +51,9 @@ export class UploadService {
       );
     } catch (err) {
       console.error('S3 upload error:', err);
-      throw new InternalServerErrorException('Failed to upload file to storage');
+      throw new InternalServerErrorException(
+        'Failed to upload file to storage',
+      );
     }
 
     // Tigris virtual-hosted URL: https://<bucket>.<host>/<key>

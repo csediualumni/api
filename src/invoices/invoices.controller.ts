@@ -88,7 +88,10 @@ export class InvoicesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(OptionalJwtAuthGuard)
-  create(@Body() dto: CreateInvoiceDto, @Request() req: any) {
+  create(
+    @Body() dto: CreateInvoiceDto,
+    @Request() req: { user?: { id: string } },
+  ) {
     const userId: string | undefined = req.user?.id;
     return this.invoices.create({
       ...dto,

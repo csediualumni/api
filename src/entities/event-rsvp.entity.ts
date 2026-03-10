@@ -37,7 +37,12 @@ export class EventRsvp {
   status: RsvpStatus;
 
   /** Linked invoice for paid-event RSVPs; null for free events */
-  @Column({ name: 'invoice_id', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'invoice_id',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   invoiceId: string | null;
 
   @ManyToOne(() => Event, (event) => event.rsvps, { onDelete: 'CASCADE' })

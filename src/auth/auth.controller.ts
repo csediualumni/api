@@ -26,6 +26,13 @@ import type {
   UpsertAchievementDto,
 } from '../users/users.service';
 
+interface GoogleOAuthUser {
+  googleId: string;
+  email: string;
+  displayName: string;
+  avatar: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -75,7 +82,7 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
   async googleCallback(@Req() req: Request, @Res() res: Response) {
-    const result = await this.auth.googleLogin(req.user as any);
+    const result = await this.auth.googleLogin(req.user as GoogleOAuthUser);
     const frontendUrl = this.config.get<string>(
       'FRONTEND_URL',
       'http://localhost:4200',
