@@ -1,22 +1,54 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
+
+interface MailOptions {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+}
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
+  private resend: Resend | null = null;
 
   constructor(private readonly config: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get<string>('SMTP_HOST', 'smtp.gmail.com'),
-      port: this.config.get<number>('SMTP_PORT', 587),
-      secure: this.config.get<number>('SMTP_PORT', 587) === 465,
-      auth: {
-        user: this.config.get<string>('SMTP_USER'),
-        pass: this.config.get<string>('SMTP_PASS'),
-      },
-    });
+    const resendKey = this.config.get<string>('RESEND_API_KEY');
+    if (resendKey) {
+      this.resend = new Resend(resendKey);
+      this.logger.log('Mail transport: Resend HTTP API');
+    } else {
+      this.transporter = nodemailer.createTransport({
+        host: this.config.get<string>('SMTP_HOST', 'smtp.gmail.com'),
+        port: this.config.get<number>('SMTP_PORT', 587),
+        secure: this.config.get<number>('SMTP_PORT', 587) === 465,
+        auth: {
+          user: this.config.get<string>('SMTP_USER'),
+          pass: this.config.get<string>('SMTP_PASS'),
+        },
+        connectionTimeout: 10_000,
+        socketTimeout: 15_000,
+      });
+      this.logger.log('Mail transport: SMTP');
+    }
+  }
+
+  private async send(opts: MailOptions): Promise<void> {
+    if (this.resend) {
+      const { error } = await this.resend.emails.send({
+        from: opts.from,
+        to: opts.to,
+        subject: opts.subject,
+        html: opts.html,
+      });
+      if (error) throw new Error(`Resend error: ${error.message}`);
+    } else {
+      await this.transporter!.sendMail(opts);
+    }
   }
 
   async sendPasswordReset(to: string, resetLink: string): Promise<void> {
@@ -25,7 +57,7 @@ export class MailService {
       'support@csediualumni.com',
     );
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: 'Password Recovery – CSE DIU Alumni Network',
@@ -67,7 +99,7 @@ export class MailService {
     const formattedAmount = `৳${amount.toLocaleString()}`;
     const shortId = invoiceId.slice(0, 8).toUpperCase();
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `Invoice Created – ${formattedAmount} – CSE DIU Alumni`,
@@ -118,7 +150,7 @@ export class MailService {
     const formattedAmount = `৳${amount.toLocaleString()}`;
     const shortId = invoiceId.slice(0, 8).toUpperCase();
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `Payment Submitted – ${formattedAmount} Under Review – CSE DIU Alumni`,
@@ -183,7 +215,7 @@ export class MailService {
     const label = statusLabel[newStatus] ?? newStatus;
     const color = statusColor[newStatus] ?? 'background:#f4f4f5;color:#3f3f46;';
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `Payment ${label} – CSE DIU Alumni`,
@@ -230,7 +262,7 @@ export class MailService {
     );
     const unsubLink = `${apiBase}/newsletter/unsubscribe?token=${encodeURIComponent(unsubToken)}`;
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject,
@@ -267,7 +299,7 @@ export class MailService {
     );
     const shortId = ticketId.slice(0, 8).toUpperCase();
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `We received your message – CSE DIU Alumni`,
@@ -319,7 +351,7 @@ export class MailService {
     const label = statusLabel[newStatus] ?? newStatus;
     const style = statusStyle[newStatus] ?? 'background:#f4f4f5;color:#3f3f46;';
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `Your message status updated: ${label} – CSE DIU Alumni`,
@@ -357,7 +389,7 @@ export class MailService {
       'support@csediualumni.com',
     );
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `New reply on your message – CSE DIU Alumni`,
@@ -396,7 +428,7 @@ export class MailService {
     const shortId = invoiceId.slice(0, 8).toUpperCase();
     const formattedAmount = `৳${amount.toLocaleString()}`;
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `Membership Application – Invoice ${shortId} – CSE DIU Alumni`,
@@ -446,7 +478,7 @@ export class MailService {
       'support@csediualumni.com',
     );
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `Welcome to CSE DIU Alumni Network! Your membership is approved`,
@@ -498,7 +530,7 @@ export class MailService {
          </div>`
       : '';
 
-    await this.transporter.sendMail({
+    await this.send({
       from: `"CSE DIU Alumni" <${from}>`,
       to,
       subject: `Membership Application Update – CSE DIU Alumni`,
