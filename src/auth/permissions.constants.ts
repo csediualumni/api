@@ -78,6 +78,9 @@ export const PERMISSIONS = {
   // Job board management
   JOBS_READ: 'jobs:read',
   JOBS_WRITE: 'jobs:write',
+
+  // Site configuration
+  CONFIG_EDIT: 'config:edit',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -258,5 +261,10 @@ export const ALL_PERMISSIONS: {
     key: 'jobs:write',
     description: 'Create, update and delete job postings',
     group: 'Jobs',
+  },
+  {
+    key: 'config:edit',
+    description: 'Edit site configuration (branding, contact info, social links)',
+    group: 'Config',
   },
 ];

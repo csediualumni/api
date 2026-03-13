@@ -52,6 +52,8 @@ import { Scholarship } from './entities/scholarship.entity';
 import { JobsModule } from './jobs/jobs.module';
 import { JobPosting } from './entities/job-posting.entity';
 import { MemberIdCounter } from './entities/member-id-counter.entity';
+import { SiteConfig } from './entities/site-config.entity';
+import { SiteConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -92,6 +94,7 @@ import { MemberIdCounter } from './entities/member-id-counter.entity';
           Scholarship,
           JobPosting,
           MemberIdCounter,
+          SiteConfig,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -116,6 +119,7 @@ import { MemberIdCounter } from './entities/member-id-counter.entity';
     MentorshipModule,
     ScholarshipsModule,
     JobsModule,
+    SiteConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService],
