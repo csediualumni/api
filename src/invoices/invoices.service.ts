@@ -283,6 +283,17 @@ export class InvoicesService {
     return updated;
   }
 
+  // ── User self-service ─────────────────────────────────────────
+
+  /** Returns all invoices owned by the given user, newest first. */
+  findMyInvoices(userId: string): Promise<Invoice[]> {
+    return this.invoiceRepo.find({
+      where: { userId },
+      relations: { payments: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   // ── Admin ────────────────────────────────────────────────────
 
   findAll(page = 1, limit = 20) {

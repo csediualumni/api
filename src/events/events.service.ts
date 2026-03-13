@@ -351,6 +351,15 @@ export class EventsService {
     return this.rsvpRepo.findOne({ where: { eventId, userId } }) ?? null;
   }
 
+  /** Returns all RSVPs for the given user, newest first, with event details. */
+  async findMyRsvps(userId: string): Promise<EventRsvp[]> {
+    return this.rsvpRepo.find({
+      where: { userId },
+      relations: { event: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async listRsvps(eventId: string): Promise<EventRsvp[]> {
     const event = await this.eventRepo.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found.');

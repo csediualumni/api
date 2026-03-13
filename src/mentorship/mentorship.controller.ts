@@ -8,8 +8,10 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   IsArray,
   IsBoolean,
@@ -100,6 +102,14 @@ export class MentorshipController {
   @HttpCode(HttpStatus.CREATED)
   apply(@Body() dto: ApplyMentorshipDto) {
     return this.mentorship.apply(dto);
+  }
+
+  /** Get the current user's own mentor/mentee application by their email */
+  @Get('my-application')
+  @UseGuards(JwtAuthGuard)
+  getMyApplication(@Req() req: Request) {
+    const { email } = req.user as { email: string };
+    return this.mentorship.findMyApplication(email);
   }
 
   // ── Admin ─────────────────────────────────────────────────────

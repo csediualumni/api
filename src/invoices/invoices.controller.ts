@@ -105,6 +105,13 @@ export class InvoicesController {
     return this.invoices.getRecentDonors(Number(limit));
   }
 
+  // ── Auth: get current user's own invoices ────────────────────
+  @Get('my')
+  @UseGuards(JwtAuthGuard)
+  getMyInvoices(@Request() req: { user: { id: string } }) {
+    return this.invoices.findMyInvoices(req.user.id);
+  }
+
   // ── Public: get single invoice by ID ──────────────────────────
   @Get(':id')
   findOne(@Param('id') id: string) {

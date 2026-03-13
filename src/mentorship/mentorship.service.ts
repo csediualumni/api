@@ -96,6 +96,11 @@ export class MentorshipService {
     return this.appRepo.find({ order: { createdAt: 'DESC' } });
   }
 
+  /** Returns the most recent application submitted with the given email, or null if none. */
+  findMyApplication(email: string): Promise<MentorApplication | null> {
+    return this.appRepo.findOne({ where: { email }, order: { createdAt: 'DESC' } }).then((r) => r ?? null);
+  }
+
   async updateApplicationStatus(
     id: string,
     status: ApplicationStatus,

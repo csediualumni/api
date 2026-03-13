@@ -23,6 +23,14 @@ export class EventsController {
     return this.eventsService.findAll();
   }
 
+  /** Get all RSVPs belonging to the currently authenticated user */
+  @Get('my-rsvps')
+  @UseGuards(JwtAuthGuard)
+  getMyRsvps(@Req() req: Request) {
+    const { id: userId } = req.user as { id: string };
+    return this.eventsService.findMyRsvps(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.eventsService.findOne(id);
