@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions.constants';
-import { UsersService, ImportMemberRow } from '../users/users.service';
+import { UsersService, ImportMemberRow, UpdateProfileDto } from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
 import type { ContactTicketStatus } from '../entities/contact-ticket.entity';
@@ -140,8 +140,12 @@ export class AdminController {
   /** Replace all roles on a user */
   @Post('users/:id/roles')
   @RequirePermissions(PERMISSIONS.USERS_ASSIGN_ROLE)
-  setRoles(@Param('id') id: string, @Body() dto: SetRolesDto) {
-    return this.users.setRoles(id, dto.roleIds);
+  async setRoles(@Param('id') id: string, @Body() dto: SetRolesDto) {
+    try {
+      return await this.users.setRoles(id, dto.roleIds);
+    } catch (e: any) {
+      throw new BadRequestException(e?.message ?? 'Failed to set roles');
+    }
   }
 
   /** Add a single role to a user */
@@ -155,8 +159,28 @@ export class AdminController {
   @Delete('users/:id/roles/:roleId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermissions(PERMISSIONS.USERS_ASSIGN_ROLE)
-  removeRole(@Param('id') id: string, @Param('roleId') roleId: string) {
-    return this.users.removeRole(id, roleId);
+  async removeRole(@Param('id') id: string, @Param('roleId') roleId: string) {
+    try {
+      return await this.users.removeRole(id, roleId);
+    } catch (e: any) {
+      throw new BadRequestException(e?.message ?? 'Failed to remove role');
+    }
+  }
+
+  /** Update any user's profile (admin override — requires users:write) */
+  @Patch('users/:id')
+  @RequirePermissions(PERMISSIONS.USERS_WRITE)
+  updateUserProfile(@Param('id') id: string, @Body() dto: UpdateProfileDto) {
+    return this.users.updateProfile(id, dto);
+  }
+
+  /** Generate a member ID for a user that has the member role but no ID yet */
+  @Post('users/:id/generate-member-id')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(PERMISSIONS.USERS_WRITE)
+  async generateMemberIdForUser(@Param('id') id: string) {
+    const memberId = await this.users.assignMemberId(id);
+    return { memberId };
   }
 
   // ── Newsletter subscriptions ───────────────────────────────

@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
+import {
+  IsBoolean, IsInt, IsOptional, IsString, IsArray, Max, Min,
+} from 'class-validator';
 import { User } from '../entities/user.entity';
 import { UserRole } from '../entities/user-role.entity';
 import { Role } from '../entities/role.entity';
@@ -12,23 +15,23 @@ import { MemberIdCounter } from '../entities/member-id-counter.entity';
 
 export type SafeUser = Omit<User, 'password' | 'generateId'>;
 
-export interface UpdateProfileDto {
-  displayName?: string;
-  phone?: string;
-  batch?: number;
-  bio?: string;
-  jobTitle?: string;
-  company?: string;
-  industry?: string;
-  city?: string;
-  country?: string;
-  linkedin?: string;
-  github?: string;
-  twitter?: string;
-  website?: string;
-  skills?: string[];
-  openToMentoring?: boolean;
-  profileVisibility?: boolean;
+export class UpdateProfileDto {
+  @IsOptional() @IsString()  displayName?: string;
+  @IsOptional() @IsString()  phone?: string;
+  @IsOptional() @IsInt() @Min(1970) @Max(2100) batch?: number;
+  @IsOptional() @IsString()  bio?: string;
+  @IsOptional() @IsString()  jobTitle?: string;
+  @IsOptional() @IsString()  company?: string;
+  @IsOptional() @IsString()  industry?: string;
+  @IsOptional() @IsString()  city?: string;
+  @IsOptional() @IsString()  country?: string;
+  @IsOptional() @IsString()  linkedin?: string;
+  @IsOptional() @IsString()  github?: string;
+  @IsOptional() @IsString()  twitter?: string;
+  @IsOptional() @IsString()  website?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) skills?: string[];
+  @IsOptional() @IsBoolean() openToMentoring?: boolean;
+  @IsOptional() @IsBoolean() profileVisibility?: boolean;
 }
 
 export interface UpsertExperienceDto {
@@ -321,11 +324,30 @@ export class UsersService {
   // ── Role assignment ──────────────────────────────────────────
 
   async setRoles(userId: string, roleIds: string[]): Promise<SafeUser> {
+    // Prevent removing the member role from a user who already has a memberId
+    const memberRole = await this.roleRepo.findOne({ where: { name: 'member' } });
+    if (memberRole && !roleIds.includes(memberRole.id)) {
+      const userCheck = await this.userRepo.findOne({ where: { id: userId } });
+      if (userCheck?.memberId) {
+        throw new Error('Cannot remove the member role from a user who has an assigned member ID.');
+      }
+    }
     await this.userRoleRepo.delete({ userId });
     if (roleIds.length > 0) {
       await this.userRoleRepo.save(
         roleIds.map((roleId) => ({ userId, roleId })),
       );
+    }
+    // Auto-generate memberId when the 'member' role is included and the user doesn't have one yet
+    if (roleIds.length > 0) {
+      const memberRole = await this.roleRepo.findOne({ where: { name: 'member' } });
+      if (memberRole && roleIds.includes(memberRole.id)) {
+        const userCheck = await this.userRepo.findOne({ where: { id: userId } });
+        if (userCheck && !userCheck.memberId) {
+          const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
+          await this.userRepo.update(userId, { memberId, profileVisibility: true });
+        }
+      }
     }
     const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
     const { password: _pw, ...safe } = user;
@@ -334,12 +356,29 @@ export class UsersService {
 
   async addRole(userId: string, roleId: string): Promise<SafeUser> {
     await this.userRoleRepo.save({ userId, roleId });
+    // Auto-generate memberId when the 'member' role is assigned and the user doesn't have one yet
+    const role = await this.roleRepo.findOne({ where: { id: roleId } });
+    if (role?.name === 'member') {
+      const userCheck = await this.userRepo.findOne({ where: { id: userId } });
+      if (userCheck && !userCheck.memberId) {
+        const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
+        await this.userRepo.update(userId, { memberId, profileVisibility: true });
+      }
+    }
     const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
     const { password: _pw, ...safe } = user;
     return safe as SafeUser;
   }
 
   async removeRole(userId: string, roleId: string): Promise<SafeUser> {
+    // Prevent stripping the member role once a memberId has been issued
+    const role = await this.roleRepo.findOne({ where: { id: roleId } });
+    if (role?.name === 'member') {
+      const userCheck = await this.userRepo.findOne({ where: { id: userId } });
+      if (userCheck?.memberId) {
+        throw new Error('Cannot remove the member role from a user who has an assigned member ID.');
+      }
+    }
     await this.userRoleRepo.delete({ userId, roleId });
     const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
     const { password: _pw, ...safe } = user;
