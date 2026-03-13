@@ -93,6 +93,14 @@ export class MentorshipController {
     return this.mentorship.findAllMentors();
   }
 
+  /** Get the current user's own mentor/mentee application by their email */
+  @Get('my-application')
+  @UseGuards(JwtAuthGuard)
+  getMyApplication(@Req() req: Request) {
+    const { email } = req.user as { email: string };
+    return this.mentorship.findMyApplication(email);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.mentorship.findMentorById(id);
@@ -102,14 +110,6 @@ export class MentorshipController {
   @HttpCode(HttpStatus.CREATED)
   apply(@Body() dto: ApplyMentorshipDto) {
     return this.mentorship.apply(dto);
-  }
-
-  /** Get the current user's own mentor/mentee application by their email */
-  @Get('my-application')
-  @UseGuards(JwtAuthGuard)
-  getMyApplication(@Req() req: Request) {
-    const { email } = req.user as { email: string };
-    return this.mentorship.findMyApplication(email);
   }
 
   // ── Admin ─────────────────────────────────────────────────────
