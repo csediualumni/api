@@ -24,9 +24,8 @@ import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { UploadService } from '../upload/upload.service';
-import { UsersService } from '../users/users.service';
+import { UsersService, UpdateProfileDto } from '../users/users.service';
 import type {
-  UpdateProfileDto,
   UpsertExperienceDto,
   UpsertEducationDto,
   UpsertAchievementDto,
