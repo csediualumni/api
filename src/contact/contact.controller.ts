@@ -1,12 +1,12 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { ContactService } from './contact.service';
 
 class CreateContactTicketDto {
-  @IsString() @IsNotEmpty() @MaxLength(200) name: string;
+  @IsString() @IsNotEmpty() name: string;
   @IsEmail() email: string;
-  @IsString() @IsNotEmpty() @MaxLength(300) subject: string;
-  @IsString() @IsNotEmpty() @MaxLength(5000) message: string;
+  @IsString() @IsNotEmpty() subject: string;
+  @IsString() @IsNotEmpty() message: string;
 }
 
 @Controller('contact')
