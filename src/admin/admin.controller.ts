@@ -9,10 +9,12 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { read, utils } from 'xlsx';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -204,10 +206,39 @@ export class AdminController {
     return this.newsletter.remove(id);
   }
 
+  @Get('newsletter/sends')
+  @RequirePermissions(PERMISSIONS.NEWSLETTER_READ)
+  listNewsletterSends() {
+    return this.newsletter.findAllSends();
+  }
+
+  @Get('newsletter/drafts')
+  @RequirePermissions(PERMISSIONS.NEWSLETTER_READ)
+  listNewsletterDrafts() {
+    return this.newsletter.findAllDrafts();
+  }
+
+  @Delete('newsletter/drafts/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.NEWSLETTER_WRITE)
+  deleteNewsletterDraft(@Param('id') id: string) {
+    return this.newsletter.deleteDraft(id);
+  }
+
+  @Post('newsletter/drafts/:id/send')
+  @RequirePermissions(PERMISSIONS.NEWSLETTER_WRITE)
+  sendNewsletterDraft(@Param('id') id: string, @Req() req: Request) {
+    const user = req.user as { displayName?: string | null; email?: string };
+    const sentByName = user?.displayName || user?.email || undefined;
+    return this.newsletter.sendDraft(id, sentByName);
+  }
+
   @Post('newsletter/send')
   @RequirePermissions(PERMISSIONS.NEWSLETTER_WRITE)
-  sendNewsletter(@Body() dto: SendNewsletterDto) {
-    return this.newsletter.sendBroadcast(dto.subject, dto.htmlBody);
+  sendNewsletter(@Body() dto: SendNewsletterDto, @Req() req: Request) {
+    const user = req.user as { displayName?: string | null; email?: string };
+    const sentByName = user?.displayName || user?.email || undefined;
+    return this.newsletter.sendBroadcast(dto.subject, dto.htmlBody, sentByName, 'manual');
   }
 
   // ── Contact Tickets ────────────────────────────────────────

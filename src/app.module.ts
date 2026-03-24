@@ -24,6 +24,8 @@ import { UserExperience } from './entities/user-experience.entity';
 import { UserEducation } from './entities/user-education.entity';
 import { UserAchievement } from './entities/user-achievement.entity';
 import { NewsletterSubscription } from './entities/newsletter-subscription.entity';
+import { NewsletterSend } from './entities/newsletter-send.entity';
+import { NewsletterDraft } from './entities/newsletter-draft.entity';
 import { MembershipApplication } from './entities/membership-application.entity';
 import { MembershipModule } from './membership/membership.module';
 import { MilestonesModule } from './milestones/milestones.module';
@@ -75,6 +77,8 @@ import { SiteConfigModule } from './config/config.module';
           UserEducation,
           UserAchievement,
           NewsletterSubscription,
+          NewsletterSend,
+          NewsletterDraft,
           ContactTicket,
           ContactTicketComment,
           MembershipApplication,

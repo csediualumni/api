@@ -95,7 +95,7 @@ export class AuthController {
     );
     // Redirect with token so Angular can store it
     res.redirect(
-      `${frontendUrl}/auth/callback?token=${result.accessToken}&userId=${result.user.id}&email=${encodeURIComponent(result.user.email)}`,
+      `${frontendUrl}/auth/callback?token=${encodeURIComponent(result.accessToken)}&userId=${result.user.id}&email=${encodeURIComponent(result.user.email)}`,
     );
   }
 
