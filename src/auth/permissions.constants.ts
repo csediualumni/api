@@ -81,6 +81,10 @@ export const PERMISSIONS = {
 
   // Site configuration
   CONFIG_EDIT: 'config:edit',
+
+  // Accounting — income, expense, audit reports
+  ACCOUNTING_READ: 'accounting:read',
+  ACCOUNTING_WRITE: 'accounting:write',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -266,5 +270,15 @@ export const ALL_PERMISSIONS: {
     key: 'config:edit',
     description: 'Edit site configuration (branding, contact info, social links)',
     group: 'Config',
+  },
+  {
+    key: 'accounting:read',
+    description: 'View accounting transactions, categories, and audit reports',
+    group: 'Accounting',
+  },
+  {
+    key: 'accounting:write',
+    description: 'Manage accounting transactions, categories, and publish audit reports',
+    group: 'Accounting',
   },
 ];

@@ -56,6 +56,10 @@ import { JobPosting } from './entities/job-posting.entity';
 import { MemberIdCounter } from './entities/member-id-counter.entity';
 import { SiteConfig } from './entities/site-config.entity';
 import { SiteConfigModule } from './config/config.module';
+import { AccountingModule } from './accounting/accounting.module';
+import { AccountCategory } from './entities/account-category.entity';
+import { AccountTransaction } from './entities/account-transaction.entity';
+import { AuditReport } from './entities/audit-report.entity';
 
 @Module({
   imports: [
@@ -99,6 +103,9 @@ import { SiteConfigModule } from './config/config.module';
           JobPosting,
           MemberIdCounter,
           SiteConfig,
+          AccountCategory,
+          AccountTransaction,
+          AuditReport,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -124,6 +131,7 @@ import { SiteConfigModule } from './config/config.module';
     ScholarshipsModule,
     JobsModule,
     SiteConfigModule,
+    AccountingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

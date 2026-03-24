@@ -33,6 +33,9 @@ import { Scholarship } from '../entities/scholarship.entity';
 import { JobPosting } from '../entities/job-posting.entity';
 import { MemberIdCounter } from '../entities/member-id-counter.entity';
 import { SiteConfig } from '../entities/site-config.entity';
+import { AccountCategory } from '../entities/account-category.entity';
+import { AccountTransaction } from '../entities/account-transaction.entity';
+import { AuditReport } from '../entities/audit-report.entity';
 import { ALL_PERMISSIONS } from '../auth/permissions.constants';
 
 const ds = new DataSource({
@@ -71,6 +74,9 @@ const ds = new DataSource({
     JobPosting,
         MemberIdCounter,
     SiteConfig,
+    AccountCategory,
+    AccountTransaction,
+    AuditReport,
   ],
   synchronize: true,
 });
@@ -199,6 +205,8 @@ async function main() {
       perm('invoices:read').id,
       perm('invoices:write').id,
       perm('membership:read').id,
+      perm('accounting:read').id,
+      perm('accounting:write').id,
     ],
   );
 
@@ -241,7 +249,37 @@ async function main() {
   }
   console.log(`  ✓ ${defaultMappings.length} designation mappings ready`);
 
-  // ── 4. Seed super admin user ──────────────────────────────────
+  // ── 4. Seed default accounting categories ───────────────────
+  console.log('▶ Seeding accounting categories…');
+  const categoryRepo = ds.getRepository(AccountCategory);
+
+  const defaultCategories: { name: string; type: 'income' | 'expense' | 'both'; isSystem: boolean }[] = [
+    // Income
+    { name: 'Donations / Fundraising', type: 'income', isSystem: true },
+    { name: 'Membership Fees', type: 'income', isSystem: true },
+    { name: 'Event Ticket Sales', type: 'income', isSystem: true },
+    { name: 'Sponsorships', type: 'income', isSystem: true },
+    { name: 'Grants / Awards', type: 'income', isSystem: true },
+    { name: 'Bank Interest', type: 'income', isSystem: true },
+    // Expense
+    { name: 'Event Expenses', type: 'expense', isSystem: true },
+    { name: 'Administrative / Office Expenses', type: 'expense', isSystem: true },
+    { name: 'Scholarship Disbursements', type: 'expense', isSystem: true },
+    { name: 'Marketing / Printing', type: 'expense', isSystem: true },
+    { name: 'Software / Tools', type: 'expense', isSystem: true },
+    // Both
+    { name: 'Miscellaneous', type: 'both', isSystem: true },
+  ];
+
+  for (const cat of defaultCategories) {
+    const existing = await categoryRepo.findOne({ where: { name: cat.name } });
+    if (!existing) {
+      await categoryRepo.save(categoryRepo.create({ id: uuidv4(), ...cat }));
+    }
+  }
+  console.log(`  ✓ ${defaultCategories.length} accounting categories ready`);
+
+  // ── 5. Seed super admin user ──────────────────────────────────
   const email = process.env.ADMIN_EMAIL ?? 'admin@csediualumni.com';
   const rawPassword = process.env.ADMIN_PASSWORD;
 
