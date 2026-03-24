@@ -3,10 +3,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import { User } from './user.entity';
 
 export type VenueType = 'journal' | 'conference' | 'preprint';
 
@@ -53,6 +56,13 @@ export class ResearchPaper {
 
   @Column({ type: 'boolean', default: false })
   featured: boolean;
+
+  @Column({ name: 'submitted_by_id', type: 'varchar', nullable: true, default: null })
+  submittedById: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL', eager: false })
+  @JoinColumn({ name: 'submitted_by_id' })
+  submittedBy: User | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

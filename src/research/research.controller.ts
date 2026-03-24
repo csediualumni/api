@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -69,6 +70,41 @@ export class ResearchController {
   @Get()
   findAll() {
     return this.research.findAll();
+  }
+
+  // ── User-owned "mine" routes (registered before :id to avoid conflict) ────
+
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  findMine(@Request() req: { user: { id: string } }) {
+    return this.research.findByUserId(req.user.id);
+  }
+
+  @Post('mine')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard)
+  createMine(
+    @Request() req: { user: { id: string } },
+    @Body() dto: CreateResearchPaperDto,
+  ) {
+    return this.research.create({ ...dto, submittedById: req.user.id });
+  }
+
+  @Patch('mine/:id')
+  @UseGuards(JwtAuthGuard)
+  updateMine(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+    @Body() dto: UpdateResearchPaperDto,
+  ) {
+    return this.research.updateForUser(id, req.user.id, dto);
+  }
+
+  @Delete('mine/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  removeMine(@Param('id') id: string, @Request() req: { user: { id: string } }) {
+    return this.research.removeForUser(id, req.user.id);
   }
 
   @Get(':id')
