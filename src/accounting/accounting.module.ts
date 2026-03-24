@@ -7,9 +7,11 @@ import { InvoicePayment } from '../entities/invoice-payment.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { AccountingService } from './accounting.service';
 import { AccountingController } from './accounting.controller';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
+    UploadModule,
     TypeOrmModule.forFeature([
       AccountCategory,
       AccountTransaction,

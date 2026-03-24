@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,15 +10,19 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   Request,
   ForbiddenException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions.constants';
 import { AccountingService } from './accounting.service';
+import { UploadService } from '../upload/upload.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { CreateAuditReportDto } from './dto/create-audit-report.dto';
@@ -25,7 +30,37 @@ import { AutoImportDto } from './dto/auto-import.dto';
 
 @Controller('accounting')
 export class AccountingController {
-  constructor(private readonly accountingService: AccountingService) {}
+  constructor(
+    private readonly accountingService: AccountingService,
+    private readonly uploadService: UploadService,
+  ) {}
+
+  // ── Receipt upload ────────────────────────────────────────────
+
+  @Post('receipts/upload')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(PERMISSIONS.ACCOUNTING_WRITE)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadReceipt(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ url: string }> {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const allowed = [
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+      'application/pdf',
+    ];
+    if (!allowed.includes(file.mimetype))
+      throw new BadRequestException('Only images and PDF files are allowed');
+    const maxBytes = 10 * 1024 * 1024;
+    if (file.size > maxBytes)
+      throw new BadRequestException('File must be smaller than 10 MB');
+    const ext = (file.originalname.split('.').pop() ?? 'bin').toLowerCase();
+    const url = await this.uploadService.uploadFile(
+      file.buffer, file.mimetype, ext, 'receipts',
+    );
+    return { url };
+  }
 
   // ── Categories ────────────────────────────────────────────────
 
