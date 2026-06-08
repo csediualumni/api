@@ -117,7 +117,7 @@ export class MailService {
             </table>
           </div>
           <p style="color:#52525b;font-size:14px;margin:0 0 20px;">
-            Use the button below to complete your payment via <strong>bKash</strong> at any time.
+            Use the button below to complete your payment at any time.
           </p>
           <a href="${paymentUrl}"
             style="display:inline-block;padding:12px 28px;background:#059669;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
@@ -133,54 +133,6 @@ export class MailService {
 
     this.logger.log(
       `Invoice created email sent to ${to} for invoice ${invoiceId}`,
-    );
-  }
-
-  async sendPaymentSubmitted(
-    to: string,
-    invoiceId: string,
-    description: string,
-    amount: number,
-    transactionId: string,
-  ): Promise<void> {
-    const from = this.config.get<string>(
-      'SMTP_FROM',
-      'support@csediualumni.com',
-    );
-    const formattedAmount = `৳${amount.toLocaleString()}`;
-    const shortId = invoiceId.slice(0, 8).toUpperCase();
-
-    await this.send({
-      from: `"CSE DIU Alumni" <${from}>`,
-      to,
-      subject: `Payment Submitted – ${formattedAmount} Under Review – CSE DIU Alumni`,
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
-          <h2 style="margin:0 0 8px;color:#065f46;font-size:20px;">Payment Received &amp; Under Review</h2>
-          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
-            Thank you! We have received your payment submission and it is currently being reviewed by our team.
-          </p>
-          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
-            <table style="width:100%;font-size:13px;color:#3f3f46;">
-              <tr><td style="padding:4px 0;color:#71717a;">Invoice ID</td><td style="padding:4px 0;font-family:monospace;font-weight:600;">${shortId}…</td></tr>
-              <tr><td style="padding:4px 0;color:#71717a;">Description</td><td style="padding:4px 0;">${description}</td></tr>
-              <tr><td style="padding:4px 0;color:#71717a;">Amount</td><td style="padding:4px 0;font-weight:700;font-size:15px;color:#065f46;">${formattedAmount}</td></tr>
-              <tr><td style="padding:4px 0;color:#71717a;">Transaction ID</td><td style="padding:4px 0;font-family:monospace;">${transactionId}</td></tr>
-              <tr><td style="padding:4px 0;color:#71717a;">Status</td><td style="padding:4px 0;"><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;">Under Review</span></td></tr>
-            </table>
-          </div>
-          <p style="color:#52525b;font-size:14px;margin:0 0 0;">
-            We will notify you by email once your payment is verified. This usually takes 1–2 business days.
-          </p>
-          <p style="color:#a1a1aa;font-size:12px;margin:24px 0 0;">
-            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#059669;">support@csediualumni.com</a>
-          </p>
-        </div>
-      `,
-    });
-
-    this.logger.log(
-      `Payment submitted email sent to ${to} for invoice ${invoiceId}`,
     );
   }
 
@@ -444,11 +396,10 @@ export class MailService {
               <tr><td style="padding:4px 0;color:#71717a;">Invoice #</td><td style="padding:4px 0;font-family:monospace;font-weight:600;">${shortId}</td></tr>
               <tr><td style="padding:4px 0;color:#71717a;">Description</td><td style="padding:4px 0;">CSE DIU Alumni Lifetime Membership</td></tr>
               <tr><td style="padding:4px 0;color:#71717a;">Amount</td><td style="padding:4px 0;font-weight:700;color:#1e3a5f;">${formattedAmount}</td></tr>
-              <tr><td style="padding:4px 0;color:#71717a;">Payment Method</td><td style="padding:4px 0;">bKash (manual)</td></tr>
             </table>
           </div>
           <p style="color:#52525b;font-size:14px;margin:0 0 16px;">
-            Click the button below to submit your bKash payment details. You can also pay later using this link.
+            Click the button below to complete your payment. You can also pay later using this link.
           </p>
           <a href="${paymentUrl}"
             style="display:inline-block;padding:12px 28px;background:#1e3a5f;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">
@@ -525,7 +476,7 @@ export class MailService {
 
     const refundSection = refundRequired
       ? `<div style="background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;padding:12px 16px;margin:0 0 20px;color:#92400e;font-size:13px;">
-           <strong>Refund:</strong> Since you had submitted a payment, a refund of ৳500 will be processed to your bKash account.
+           <strong>Refund:</strong> Since you had submitted a payment, a refund of ৳500 will be processed.
            Please contact us at <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a> if you do not receive it within 7 business days.
          </div>`
       : '';

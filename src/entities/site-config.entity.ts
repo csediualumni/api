@@ -5,7 +5,6 @@ export const SITE_CONFIG_KEYS = [
   'faviconUrl',
   'supportEmail',
   'supportPhone',
-  'bkashNumber',
   'location',
   'facebookUrl',
   'twitterUrl',

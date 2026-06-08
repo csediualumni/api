@@ -11,10 +11,6 @@ export class UpdateConfigDto {
 
   @IsOptional()
   @IsString()
-  bkashNumber?: string;
-
-  @IsOptional()
-  @IsString()
   location?: string;
 
   @IsOptional()

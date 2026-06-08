@@ -28,7 +28,6 @@ import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions.constants';
 import { InvoicesService } from './invoices.service';
 import type { InvoiceStatus } from '../entities/invoice.entity';
-import type { PaymentStatus } from '../entities/invoice-payment.entity';
 
 // ── DTOs ─────────────────────────────────────────────────────────
 
@@ -53,19 +52,6 @@ class CreateInvoiceDto {
   isAnonymous?: boolean;
 
   @IsOptional() metadata?: Record<string, unknown>;
-}
-
-class SubmitPaymentDto {
-  @IsInt() @Min(1) amount: number;
-  @IsString() @IsNotEmpty() transactionId: string;
-  @IsString() @IsOptional() senderBkash?: string;
-}
-
-class UpdatePaymentStatusDto {
-  @IsString()
-  @IsIn(['pending', 'verified', 'rejected', 'refunded'])
-  status: PaymentStatus;
-  @IsString() @IsOptional() adminNote?: string;
 }
 
 class UpdateInvoiceStatusDto {
@@ -118,13 +104,6 @@ export class InvoicesController {
     return this.invoices.findById(id);
   }
 
-  // ── Public: submit a payment against an invoice ───────────────
-  @Post(':id/payments')
-  @HttpCode(HttpStatus.CREATED)
-  submitPayment(@Param('id') id: string, @Body() dto: SubmitPaymentDto) {
-    return this.invoices.submitPayment(id, dto);
-  }
-
   // ── Admin: list all invoices ───────────────────────────────────
   @Get()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -142,18 +121,6 @@ export class InvoicesController {
     @Body() dto: UpdateInvoiceStatusDto,
   ) {
     return this.invoices.updateInvoiceStatus(id, dto.status);
-  }
-
-  // ── Admin: update a payment's status (verify / reject) ────────
-  @Patch(':id/payments/:paymentId/status')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @RequirePermissions(PERMISSIONS.INVOICES_WRITE)
-  updatePaymentStatus(
-    @Param('id') id: string,
-    @Param('paymentId') paymentId: string,
-    @Body() dto: UpdatePaymentStatusDto,
-  ) {
-    return this.invoices.updatePaymentStatus(id, paymentId, dto);
   }
 
   // ── Admin: refund a payment ───────────────────────────────────

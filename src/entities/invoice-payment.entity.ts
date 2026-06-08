@@ -34,13 +34,17 @@ export class InvoicePayment {
   @Column({ type: 'int' })
   amount: number;
 
-  /** bKash transaction ID provided by the payer */
+  /** Gateway transaction ID (set by payment gateway) */
   @Column({ name: 'transaction_id', type: 'varchar' })
   transactionId: string;
 
-  /** Sender's bKash number — null for anonymous payments */
-  @Column({ name: 'sender_bkash', type: 'varchar', nullable: true })
-  senderBkash: string | null;
+  /** Payment gateway used (e.g. 'sslcommerz') */
+  @Column({ type: 'varchar', default: 'sslcommerz' })
+  gateway: string;
+
+  /** SSL Commerz validation ID returned after successful payment */
+  @Column({ name: 'val_id', type: 'varchar', nullable: true })
+  valId: string | null;
 
   @Column({ type: 'varchar', default: 'pending' })
   status: PaymentStatus;

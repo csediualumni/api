@@ -27,13 +27,6 @@ export interface CreateInvoiceDto {
   metadata?: Record<string, unknown>;
 }
 
-export interface SubmitPaymentDto {
-  amount: number;
-  transactionId: string;
-  /** omit / null for anonymous invoices */
-  senderBkash?: string;
-}
-
 export interface UpdatePaymentStatusDto {
   status: PaymentStatus;
   adminNote?: string;
@@ -194,93 +187,6 @@ export class InvoicesService {
       createdAt: inv.createdAt,
       metadata: inv.metadata,
     }));
-  }
-
-  async submitPayment(
-    invoiceId: string,
-    dto: SubmitPaymentDto,
-  ): Promise<Invoice> {
-    this.logger.log(
-      `[PAYMENT SUBMIT] invoiceId=${invoiceId} amount=${dto.amount} txId=${dto.transactionId}`,
-    );
-    const inv = await this.findById(invoiceId);
-
-    if (inv.status === 'cancelled') {
-      this.logger.warn(
-        `[PAYMENT SUBMIT] Rejected – invoice ${invoiceId} is cancelled`,
-      );
-      throw new BadRequestException('Cannot pay a cancelled invoice');
-    }
-
-    if (dto.amount <= 0) {
-      this.logger.warn(
-        `[PAYMENT SUBMIT] Rejected – amount must be positive (got ${dto.amount})`,
-      );
-      throw new BadRequestException('Payment amount must be positive');
-    }
-
-    const dup = await this.paymentRepo.findOne({
-      where: { invoiceId, transactionId: dto.transactionId },
-    });
-    if (dup) {
-      this.logger.warn(
-        `[PAYMENT SUBMIT] Rejected – duplicate transactionId=${dto.transactionId} for invoiceId=${invoiceId}`,
-      );
-      throw new BadRequestException(
-        'This transaction ID has already been submitted for this invoice',
-      );
-    }
-
-    const payment = this.paymentRepo.create({
-      invoiceId,
-      amount: dto.amount,
-      transactionId: dto.transactionId,
-      senderBkash: inv.isAnonymous ? null : (dto.senderBkash ?? null),
-      status: 'pending',
-    });
-    await this.paymentRepo.save(payment);
-    this.logger.log(
-      `[PAYMENT SUBMIT] Payment saved paymentId=${payment.id} invoiceId=${invoiceId}`,
-    );
-
-    const updated = await this.findById(invoiceId);
-
-    if (!inv.isAnonymous && inv.userId) {
-      this.logger.log(
-        `[EMAIL] Queuing "payment submitted" email for userId=${inv.userId} invoiceId=${invoiceId}`,
-      );
-      this.sendMailSafe(
-        `payment-submitted invoiceId=${invoiceId}`,
-        async () => {
-          const email = await this.getUserEmail(inv.userId);
-          if (!email) {
-            this.logger.warn(
-              `[EMAIL] No email found for userId=${inv.userId} – skipping payment submitted email`,
-            );
-            return;
-          }
-          this.logger.log(
-            `[EMAIL] Sending "payment submitted" to ${email} invoiceId=${invoiceId} txId=${dto.transactionId}`,
-          );
-          await this.mail.sendPaymentSubmitted(
-            email,
-            invoiceId,
-            inv.description,
-            dto.amount,
-            dto.transactionId,
-          );
-          this.logger.log(
-            `[EMAIL] "payment submitted" sent successfully to ${email}`,
-          );
-        },
-      );
-    } else {
-      this.logger.log(
-        `[EMAIL] Skipping "payment submitted" email – anonymous=${inv.isAnonymous} userId=${inv.userId ?? 'none'}`,
-      );
-    }
-
-    return updated;
   }
 
   // ── User self-service ─────────────────────────────────────────

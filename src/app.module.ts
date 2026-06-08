@@ -60,6 +60,7 @@ import { AccountingModule } from './accounting/accounting.module';
 import { AccountCategory } from './entities/account-category.entity';
 import { AccountTransaction } from './entities/account-transaction.entity';
 import { AuditReport } from './entities/audit-report.entity';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -132,6 +133,7 @@ import { AuditReport } from './entities/audit-report.entity';
     JobsModule,
     SiteConfigModule,
     AccountingModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
