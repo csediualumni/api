@@ -20,11 +20,18 @@ export interface EventTimelineItem {
   description?: string;
 }
 
+/** A single guest with optional photo and designation */
+export interface EventGuest {
+  name: string;
+  designation?: string;
+  image?: string;
+}
+
 /** Named guests of honour */
 export interface EventGuestList {
-  president?: string;
-  chiefGuest?: string;
-  specialGuests?: string[];
+  president?: EventGuest;
+  chiefGuest?: EventGuest;
+  specialGuests?: EventGuest[];
 }
 
 @Entity('events')

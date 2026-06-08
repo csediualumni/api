@@ -67,10 +67,16 @@ export class TimelineItemDto {
   @IsOptional() @IsString() description?: string;
 }
 
+export class EventGuestDto {
+  @IsString() @IsNotEmpty() name!: string;
+  @IsOptional() @IsString() designation?: string;
+  @IsOptional() @IsString() image?: string;
+}
+
 export class GuestListDto {
-  @IsOptional() @IsString() president?: string;
-  @IsOptional() @IsString() chiefGuest?: string;
-  @IsOptional() @IsArray() @IsString({ each: true }) specialGuests?: string[];
+  @IsOptional() @ValidateNested() @Type(() => EventGuestDto) president?: EventGuestDto;
+  @IsOptional() @ValidateNested() @Type(() => EventGuestDto) chiefGuest?: EventGuestDto;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => EventGuestDto) specialGuests?: EventGuestDto[];
 }
 
 export class CreateEventDto {
@@ -383,7 +389,7 @@ export class EventsService {
     const failures: string[] = [];
     if (!event.timeline?.length)
       failures.push('Timeline must have at least one item');
-    if (!event.guestList?.president && !event.guestList?.chiefGuest)
+    if (!event.guestList?.president?.name && !event.guestList?.chiefGuest?.name)
       failures.push('Guest list must include at least a President or Chief Guest');
     if (!event.activities?.trim())
       failures.push('Activities description must be filled in');
