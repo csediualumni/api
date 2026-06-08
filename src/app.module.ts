@@ -37,6 +37,12 @@ import { DesignationRoleMapping } from './entities/designation-role-mapping.enti
 import { EventsModule } from './events/events.module';
 import { Event } from './entities/event.entity';
 import { EventRsvp } from './entities/event-rsvp.entity';
+import { EventRegistration } from './entities/event-registration.entity';
+import { EventFamilyMember } from './entities/event-family-member.entity';
+import { EventSponsor } from './entities/event-sponsor.entity';
+import { EventExpense } from './entities/event-expense.entity';
+import { EventIncome } from './entities/event-income.entity';
+import { EventCheckIn } from './entities/event-checkin.entity';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { Campaign } from './entities/campaign.entity';
 import { GalleryModule } from './gallery/gallery.module';
@@ -93,6 +99,12 @@ import { PaymentModule } from './payment/payment.module';
           DesignationRoleMapping,
           Event,
           EventRsvp,
+          EventRegistration,
+          EventFamilyMember,
+          EventSponsor,
+          EventExpense,
+          EventIncome,
+          EventCheckIn,
           Campaign,
           GalleryAlbum,
           GalleryItem,

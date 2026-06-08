@@ -13,6 +13,20 @@ import { EventRsvp } from './event-rsvp.entity';
 export type EventMode = 'In-Person' | 'Online' | 'Hybrid';
 export type EventStatus = 'upcoming' | 'ongoing' | 'past';
 
+/** A single item in the event day schedule */
+export interface EventTimelineItem {
+  time: string;       // e.g. "9:00 AM"
+  title: string;      // e.g. "Breakfast"
+  description?: string;
+}
+
+/** Named guests of honour */
+export interface EventGuestList {
+  president?: string;
+  chiefGuest?: string;
+  specialGuests?: string[];
+}
+
 @Entity('events')
 export class Event {
   @PrimaryColumn({ type: 'varchar' })
@@ -83,10 +97,38 @@ export class Event {
 
   /**
    * Ticket price in BDT (integer). null or 0 = free event.
-   * When set, RSVP creates a pending Invoice before confirming registration.
+   * When set, registration creates a pending Invoice before confirming.
    */
   @Column({ name: 'ticket_price', type: 'int', nullable: true, default: null })
   ticketPrice: number | null;
+
+  /** Whether the event is visible on the public site */
+  @Column({ type: 'boolean', default: false })
+  published: boolean;
+
+  /** Day-of schedule items, ordered as they should appear */
+  @Column({ type: 'jsonb', nullable: true, default: null })
+  timeline: EventTimelineItem[] | null;
+
+  /** Named guests of honour (president, chief guest, special guests) */
+  @Column({ name: 'guest_list', type: 'jsonb', nullable: true, default: null })
+  guestList: EventGuestList | null;
+
+  /** Rich HTML describing event activities */
+  @Column({ type: 'text', nullable: true, default: null })
+  activities: string | null;
+
+  /** If true, registrants may bring additional family members */
+  @Column({ name: 'allow_family_members', type: 'boolean', default: false })
+  allowFamilyMembers: boolean;
+
+  /** Fee per additional family member in BDT; null = same as ticket price */
+  @Column({ name: 'family_member_fee', type: 'int', nullable: true, default: null })
+  familyMemberFee: number | null;
+
+  /** If true, registrants can add an optional donation when registering */
+  @Column({ name: 'donation_enabled', type: 'boolean', default: false })
+  donationEnabled: boolean;
 
   @OneToMany(() => EventRsvp, (rsvp) => rsvp.event)
   rsvps: EventRsvp[];

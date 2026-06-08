@@ -42,6 +42,12 @@ import {
   EventsService,
   CreateEventDto,
   UpdateEventDto,
+  CreateSponsorDto,
+  UpdateSponsorDto,
+  CreateExpenseDto,
+  UpdateExpenseDto,
+  CreateIncomeDto,
+  UpdateIncomeDto,
 } from '../events/events.service';
 import { UploadService } from '../upload/upload.service';
 import { IsArray, IsString, IsNotEmpty, IsIn, IsUUID } from 'class-validator';
@@ -394,7 +400,13 @@ export class AdminController {
   @Get('events')
   @RequirePermissions(PERMISSIONS.EVENTS_READ)
   listEvents() {
-    return this.eventsService.findAll();
+    return this.eventsService.adminFindAll();
+  }
+
+  @Get('events/:id')
+  @RequirePermissions(PERMISSIONS.EVENTS_READ)
+  getEvent(@Param('id') id: string) {
+    return this.eventsService.adminFindOne(id);
   }
 
   @Post('events')
@@ -415,6 +427,118 @@ export class AdminController {
   deleteEvent(@Param('id') id: string) {
     return this.eventsService.remove(id);
   }
+
+  @Post('events/:id/publish')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  publishEvent(@Param('id') id: string) {
+    return this.eventsService.publish(id);
+  }
+
+  @Delete('events/:id/publish')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  unpublishEvent(@Param('id') id: string) {
+    return this.eventsService.unpublish(id);
+  }
+
+  // ── Event Registrations (new system) ──────────────────────────────────────
+
+  @Get('events/:id/registrations')
+  @RequirePermissions(PERMISSIONS.EVENTS_READ)
+  listEventRegistrations(@Param('id') id: string) {
+    return this.eventsService.listRegistrations(id);
+  }
+
+  @Post('events/:id/registrations/:regId/confirm')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  confirmEventRegistration(
+    @Param('id') id: string,
+    @Param('regId') regId: string,
+  ) {
+    return this.eventsService.confirmRegistration(id, regId);
+  }
+
+  // ── Event Sponsors ─────────────────────────────────────────────────────────
+
+  @Post('events/:id/sponsors')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  createSponsor(@Param('id') id: string, @Body() dto: CreateSponsorDto) {
+    return this.eventsService.createSponsor(id, dto);
+  }
+
+  @Patch('events/:id/sponsors/:sponsorId')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  updateSponsor(
+    @Param('id') id: string,
+    @Param('sponsorId') sponsorId: string,
+    @Body() dto: UpdateSponsorDto,
+  ) {
+    return this.eventsService.updateSponsor(id, sponsorId, dto);
+  }
+
+  @Delete('events/:id/sponsors/:sponsorId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  removeSponsor(@Param('id') id: string, @Param('sponsorId') sponsorId: string) {
+    return this.eventsService.removeSponsor(id, sponsorId);
+  }
+
+  // ── Event Expenses ─────────────────────────────────────────────────────────
+
+  @Get('events/:id/expenses')
+  @RequirePermissions(PERMISSIONS.EVENTS_READ)
+  listExpenses(@Param('id') id: string) {
+    return this.eventsService.listExpenses(id);
+  }
+
+  @Post('events/:id/expenses')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  createExpense(@Param('id') id: string, @Body() dto: CreateExpenseDto, @Req() req: Request) {
+    const { id: userId } = req.user as { id: string };
+    return this.eventsService.createExpense(id, dto, userId);
+  }
+
+  @Patch('events/:id/expenses/:expenseId')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  updateExpense(@Param('expenseId') expenseId: string, @Body() dto: UpdateExpenseDto) {
+    return this.eventsService.updateExpense(expenseId, dto);
+  }
+
+  @Delete('events/:id/expenses/:expenseId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  removeExpense(@Param('expenseId') expenseId: string) {
+    return this.eventsService.removeExpense(expenseId);
+  }
+
+  // ── Event Income ───────────────────────────────────────────────────────────
+
+  @Get('events/:id/income')
+  @RequirePermissions(PERMISSIONS.EVENTS_READ)
+  listIncome(@Param('id') id: string) {
+    return this.eventsService.listIncome(id);
+  }
+
+  @Post('events/:id/income')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  createIncome(@Param('id') id: string, @Body() dto: CreateIncomeDto, @Req() req: Request) {
+    const { id: userId } = req.user as { id: string };
+    return this.eventsService.createIncome(id, dto, userId);
+  }
+
+  @Patch('events/:id/income/:incomeId')
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  updateIncome(@Param('incomeId') incomeId: string, @Body() dto: UpdateIncomeDto) {
+    return this.eventsService.updateIncome(incomeId, dto);
+  }
+
+  @Delete('events/:id/income/:incomeId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  removeIncome(@Param('incomeId') incomeId: string) {
+    return this.eventsService.removeIncome(incomeId);
+  }
+
+  // ── Legacy RSVP (kept for backward compatibility) ─────────────────────────
 
   @Get('events/:id/rsvps')
   @RequirePermissions(PERMISSIONS.EVENTS_READ)
