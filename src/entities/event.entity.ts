@@ -34,6 +34,14 @@ export interface EventGuestList {
   specialGuests?: EventGuest[];
 }
 
+/** A contact person for the event (name, image, phone, email) */
+export interface EventContactPerson {
+  name: string;
+  image?: string;
+  phone?: string;
+  email?: string;
+}
+
 @Entity('events')
 export class Event {
   @PrimaryColumn({ type: 'varchar' })
@@ -136,6 +144,10 @@ export class Event {
   /** If true, registrants can add an optional donation when registering */
   @Column({ name: 'donation_enabled', type: 'boolean', default: false })
   donationEnabled: boolean;
+
+  /** Contact persons for the event (name, image, phone, email) */
+  @Column({ name: 'contact_persons', type: 'jsonb', nullable: true, default: null })
+  contactPersons: EventContactPerson[] | null;
 
   @OneToMany(() => EventRsvp, (rsvp) => rsvp.event)
   rsvps: EventRsvp[];

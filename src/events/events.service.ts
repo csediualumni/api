@@ -24,6 +24,7 @@ import type {
   EventStatus,
   EventTimelineItem,
   EventGuestList,
+  EventContactPerson,
 } from '../entities/event.entity';
 import { EventRsvp } from '../entities/event-rsvp.entity';
 import { EventRegistration } from '../entities/event-registration.entity';
@@ -79,6 +80,13 @@ export class GuestListDto {
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => EventGuestDto) specialGuests?: EventGuestDto[];
 }
 
+export class ContactPersonDto {
+  @IsString() @IsNotEmpty() name!: string;
+  @IsOptional() @IsString() image?: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() email?: string;
+}
+
 export class CreateEventDto {
   @IsString() @IsNotEmpty() title!: string;
   @IsString() @IsNotEmpty() description!: string;
@@ -102,6 +110,7 @@ export class CreateEventDto {
   @IsOptional() @IsBoolean() allowFamilyMembers?: boolean;
   @IsOptional() @IsInt() @Min(0) familyMemberFee?: number | null;
   @IsOptional() @IsBoolean() donationEnabled?: boolean;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ContactPersonDto) contactPersons?: ContactPersonDto[];
 }
 
 export class UpdateEventDto {
@@ -127,6 +136,7 @@ export class UpdateEventDto {
   @IsOptional() @IsBoolean() allowFamilyMembers?: boolean;
   @IsOptional() @IsInt() @Min(0) familyMemberFee?: number | null;
   @IsOptional() @IsBoolean() donationEnabled?: boolean;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ContactPersonDto) contactPersons?: ContactPersonDto[];
 }
 
 export class FamilyMemberDto {
@@ -334,6 +344,7 @@ export class EventsService {
       allowFamilyMembers: dto.allowFamilyMembers ?? false,
       familyMemberFee: dto.familyMemberFee ?? null,
       donationEnabled: dto.donationEnabled ?? false,
+      contactPersons: dto.contactPersons?.length ? (dto.contactPersons as EventContactPerson[]) : null,
     });
     const saved = await this.eventRepo.save(event);
     const [enriched] = await this.attachMeta([saved]);
@@ -368,6 +379,8 @@ export class EventsService {
     if (dto.allowFamilyMembers !== undefined) event.allowFamilyMembers = dto.allowFamilyMembers;
     if (dto.familyMemberFee !== undefined) event.familyMemberFee = dto.familyMemberFee ?? null;
     if (dto.donationEnabled !== undefined) event.donationEnabled = dto.donationEnabled;
+    if (dto.contactPersons !== undefined)
+      event.contactPersons = dto.contactPersons?.length ? (dto.contactPersons as EventContactPerson[]) : null;
 
     const saved = await this.eventRepo.save(event);
     const [enriched] = await this.attachMeta([saved]);

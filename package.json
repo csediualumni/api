@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
     "db:reset": "ts-node -r tsconfig-paths/register src/database/reset.ts",
-    "db:fresh": "npm run db:reset && npm run db:seed"
+    "db:fresh": "npm run db:reset && npm run db:seed",
+    "db:migrate:contact-persons": "ts-node -r tsconfig-paths/register src/database/migrate-contact-persons.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1004.0",
