@@ -29,6 +29,10 @@ export class DesignationRoleMapping {
   @Column({ unique: true })
   designation: string;
 
+  /** Lower number = higher rank (0 = top). Used to sort committee members. */
+  @Column({ type: 'int', default: 0 })
+  priority: number;
+
   @Column({ name: 'role_id', type: 'varchar', nullable: true })
   roleId: string | null;
 

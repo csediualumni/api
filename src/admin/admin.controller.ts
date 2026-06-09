@@ -50,10 +50,11 @@ import {
   UpdateIncomeDto,
 } from '../events/events.service';
 import { UploadService } from '../upload/upload.service';
-import { IsArray, IsString, IsNotEmpty, IsIn, IsUUID } from 'class-validator';
+import { IsArray, IsString, IsNotEmpty, IsIn, IsUUID, IsOptional, IsInt, Min } from 'class-validator';
 
 class UpdateDesignationMappingDto {
-  @IsUUID() roleId: string;
+  @IsOptional() @IsUUID() roleId?: string;
+  @IsOptional() @IsInt() @Min(0) priority?: number;
 }
 
 class SetRolesDto {
@@ -385,7 +386,7 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: UpdateDesignationMappingDto,
   ) {
-    return this.committeesService.updateMapping(id, dto.roleId);
+    return this.committeesService.updateMapping(id, { roleId: dto.roleId, priority: dto.priority });
   }
 
   @Delete('designation-roles/:id')

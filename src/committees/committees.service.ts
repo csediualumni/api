@@ -47,6 +47,7 @@ export class UpdateCommitteeMemberDto {
 export class SetDesignationMappingDto {
   @IsString() @IsNotEmpty() designation!: string;
   @IsUUID() roleId!: string;
+  @IsOptional() @IsInt() @Min(0) priority?: number;
 }
 
 /**
@@ -141,19 +142,21 @@ export class CommitteesService {
   // ── Committee CRUD ─────────────────────────────────────────────────
 
   findAll(): Promise<Committee[]> {
-    return this.committeeRepo.find({
-      relations: { members: { user: true } },
-      select: {
-        members: {
-          id: true,
-          designation: true,
-          sortOrder: true,
-          note: true,
-          user: USER_SELECT,
+    return this.committeeRepo
+      .find({
+        relations: { members: { user: true } },
+        select: {
+          members: {
+            id: true,
+            designation: true,
+            sortOrder: true,
+            note: true,
+            user: USER_SELECT,
+          },
         },
-      },
-      order: { isCurrent: 'DESC', sortOrder: 'ASC', createdAt: 'DESC' },
-    });
+        order: { isCurrent: 'DESC', sortOrder: 'ASC', createdAt: 'DESC' },
+      })
+      .then((committees) => this.sortMembersInCommittees(committees));
   }
 
   async findOne(id: string): Promise<Committee> {
@@ -171,7 +174,28 @@ export class CommitteesService {
       },
     });
     if (!c) throw new NotFoundException('Committee not found.');
-    return c;
+    const [sorted] = await this.sortMembersInCommittees([c]);
+    return sorted;
+  }
+
+  /** Sorts members within each committee by designation priority then displayName. */
+  private async sortMembersInCommittees(committees: Committee[]): Promise<Committee[]> {
+    if (committees.every((c) => c.members.length === 0)) return committees;
+
+    const mappings = await this.mappingRepo.find();
+    const priorityMap = new Map<string, number>(mappings.map((m) => [m.designation, m.priority]));
+
+    for (const committee of committees) {
+      committee.members.sort((a, b) => {
+        const pa = priorityMap.get(a.designation) ?? 999999;
+        const pb = priorityMap.get(b.designation) ?? 999999;
+        if (pa !== pb) return pa - pb;
+        const na = (a.user?.displayName ?? a.user?.email ?? '').toLowerCase();
+        const nb = (b.user?.displayName ?? b.user?.email ?? '').toLowerCase();
+        return na.localeCompare(nb);
+      });
+    }
+    return committees;
   }
 
   async create(dto: CreateCommitteeDto): Promise<Committee> {
@@ -320,7 +344,7 @@ export class CommitteesService {
   listMappings(): Promise<DesignationRoleMapping[]> {
     return this.mappingRepo.find({
       relations: { role: true },
-      order: { designation: 'ASC' },
+      order: { priority: 'ASC', designation: 'ASC' },
     });
   }
 
@@ -332,11 +356,13 @@ export class CommitteesService {
     });
     if (existing) {
       existing.roleId = dto.roleId;
+      if (dto.priority !== undefined) existing.priority = dto.priority;
       return this.mappingRepo.save(existing);
     }
     const m = this.mappingRepo.create({
       designation: dto.designation,
       roleId: dto.roleId,
+      priority: dto.priority ?? 0,
     });
     const saved = await this.mappingRepo.save(m);
     return this.mappingRepo.findOne({
@@ -347,10 +373,11 @@ export class CommitteesService {
 
   async updateMapping(
     id: string,
-    roleId: string,
+    dto: { roleId?: string; priority?: number },
   ): Promise<DesignationRoleMapping> {
     const m = await this.mappingRepo.findOneOrFail({ where: { id } });
-    m.roleId = roleId;
+    if (dto.roleId !== undefined) m.roleId = dto.roleId;
+    if (dto.priority !== undefined) m.priority = dto.priority;
     await this.mappingRepo.save(m);
     return this.mappingRepo.findOne({
       where: { id },
