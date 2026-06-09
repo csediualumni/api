@@ -35,7 +35,7 @@ export class SslCommerzService {
 
   private backendUrl(path: string): string {
     const base = this.config.get<string>('BACKEND_URL', 'http://localhost:3000');
-    return `${base}${path}`;
+    return `${base}/api/v1${path}`;
   }
 
   async initPayment(params: {
