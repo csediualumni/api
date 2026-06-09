@@ -1,7 +1,6 @@
 import {
   Controller,
   Post,
-  Get,
   Param,
   Body,
   Query,
@@ -141,11 +140,11 @@ export class PaymentController {
     return { received: true };
   }
 
-  /** GET /invoices/sslcommerz/success — browser redirect after successful payment */
-  @Get('invoices/sslcommerz/success')
+  /** POST /invoices/sslcommerz/success — browser redirect after successful payment */
+  @Post('invoices/sslcommerz/success')
   async handleSuccess(
     @Query('invoiceId') invoiceId: string,
-    @Query('val_id') valId: string,
+    @Body('val_id') valId: string,
     @Res() res: Response,
   ): Promise<void> {
     this.logger.log(`[SUCCESS] invoiceId=${invoiceId} val_id=${valId}`);
@@ -164,8 +163,8 @@ export class PaymentController {
     res.redirect(this.frontendUrl(`/payment/success?invoiceId=${invoiceId}`));
   }
 
-  /** GET /invoices/sslcommerz/fail — browser redirect on failure/cancel */
-  @Get('invoices/sslcommerz/fail')
+  /** POST /invoices/sslcommerz/fail — browser redirect on failure/cancel */
+  @Post('invoices/sslcommerz/fail')
   async handleFail(
     @Query('invoiceId') invoiceId: string,
     @Query('tranId') tranId: string,
