@@ -38,7 +38,12 @@ export class EventSponsor {
   @Column({ name: 'logo_url', type: 'text', nullable: true, default: null })
   logoUrl: string | null;
 
-  @Column({ name: 'website_url', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'website_url',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   websiteUrl: string | null;
 
   /** Sponsorship tier controls display order and visual treatment */

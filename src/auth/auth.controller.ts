@@ -140,7 +140,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async generateMemberId(@Req() req: Request): Promise<{ memberId: string }> {
     const jwtUser = req.user as { id: string; roles?: { name: string }[] };
-    const hasMemberRole = (jwtUser.roles ?? []).some((r) => r.name === 'member');
+    const hasMemberRole = (jwtUser.roles ?? []).some(
+      (r) => r.name === 'member',
+    );
     if (!hasMemberRole) {
       throw new ForbiddenException('Only members can generate a member ID');
     }
@@ -161,7 +163,12 @@ export class AuthController {
       throw new BadRequestException('Only image files are allowed');
     const ext = (file.originalname.split('.').pop() ?? 'jpg').toLowerCase();
     const { id } = req.user as { id: string };
-    const url = await this.upload.uploadFile(file.buffer, file.mimetype, ext, 'avatars');
+    const url = await this.upload.uploadFile(
+      file.buffer,
+      file.mimetype,
+      ext,
+      'avatars',
+    );
     await this.users.updateAvatar(id, url);
     return { avatar: url };
   }

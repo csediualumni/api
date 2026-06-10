@@ -15,8 +15,8 @@ export type EventStatus = 'upcoming' | 'ongoing' | 'past';
 
 /** A single item in the event day schedule */
 export interface EventTimelineItem {
-  time: string;       // e.g. "9:00 AM"
-  title: string;      // e.g. "Breakfast"
+  time: string; // e.g. "9:00 AM"
+  title: string; // e.g. "Breakfast"
   description?: string;
 }
 
@@ -138,7 +138,12 @@ export class Event {
   allowFamilyMembers: boolean;
 
   /** Fee per additional family member in BDT; null = same as ticket price */
-  @Column({ name: 'family_member_fee', type: 'int', nullable: true, default: null })
+  @Column({
+    name: 'family_member_fee',
+    type: 'int',
+    nullable: true,
+    default: null,
+  })
   familyMemberFee: number | null;
 
   /** If true, registrants can add an optional donation when registering */
@@ -146,13 +151,28 @@ export class Event {
   donationEnabled: boolean;
 
   /** Contact persons for the event (name, image, phone, email) */
-  @Column({ name: 'contact_persons', type: 'jsonb', nullable: true, default: null })
+  @Column({
+    name: 'contact_persons',
+    type: 'jsonb',
+    nullable: true,
+    default: null,
+  })
   contactPersons: EventContactPerson[] | null;
 
-  @Column({ name: 'registration_open_at', type: 'timestamptz', nullable: true, default: null })
+  @Column({
+    name: 'registration_open_at',
+    type: 'timestamptz',
+    nullable: true,
+    default: null,
+  })
   registrationOpenAt: Date | null;
 
-  @Column({ name: 'registration_close_at', type: 'timestamptz', nullable: true, default: null })
+  @Column({
+    name: 'registration_close_at',
+    type: 'timestamptz',
+    nullable: true,
+    default: null,
+  })
   registrationCloseAt: Date | null;
 
   @OneToMany(() => EventRsvp, (rsvp) => rsvp.event)

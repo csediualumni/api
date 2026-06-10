@@ -103,7 +103,10 @@ export class ResearchController {
   @Delete('mine/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
-  removeMine(@Param('id') id: string, @Request() req: { user: { id: string } }) {
+  removeMine(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
     return this.research.removeForUser(id, req.user.id);
   }
 

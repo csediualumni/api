@@ -40,7 +40,12 @@ export class EventDistributionItem {
   itemType: DistributionItemType;
 
   /** Used when itemType = 'custom' */
-  @Column({ name: 'custom_label', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'custom_label',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   customLabel: string | null;
 
   /** Whether the main registrant is entitled to this item */

@@ -83,7 +83,9 @@ export class AuthService {
     return { message: genericMessage };
   }
 
-  async checkEmail(email: string): Promise<{ exists: boolean; isGuest: boolean }> {
+  async checkEmail(
+    email: string,
+  ): Promise<{ exists: boolean; isGuest: boolean }> {
     const user = await this.users.findByEmail(email.toLowerCase().trim());
     if (!user) return { exists: false, isGuest: false };
     return { exists: true, isGuest: !!(user as any).isGuest };
@@ -96,7 +98,10 @@ export class AuthService {
     return this.buildSession(full.id, full.email);
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.users.findByResetToken(token);
     if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
       throw new BadRequestException(

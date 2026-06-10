@@ -36,7 +36,10 @@ export class PaymentController {
   ) {}
 
   private frontendUrl(path: string): string {
-    const base = this.config.get<string>('FRONTEND_URL', 'http://localhost:4200');
+    const base = this.config.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:4200',
+    );
     return `${base}${path}`;
   }
 
@@ -50,12 +53,18 @@ export class PaymentController {
 
   /** POST /invoices/:id/sslcommerz/init — initiates payment session */
   @Post('invoices/:id/sslcommerz/init')
-  async initPayment(@Param('id') invoiceId: string): Promise<{ gatewayUrl: string }> {
-    const invoice = await this.invoiceRepo.findOne({ where: { id: invoiceId } });
+  async initPayment(
+    @Param('id') invoiceId: string,
+  ): Promise<{ gatewayUrl: string }> {
+    const invoice = await this.invoiceRepo.findOne({
+      where: { id: invoiceId },
+    });
 
     if (!invoice) throw new NotFoundException('Invoice not found');
-    if (invoice.status === 'paid') throw new BadRequestException('Invoice is already paid');
-    if (invoice.status === 'cancelled') throw new BadRequestException('Invoice is cancelled');
+    if (invoice.status === 'paid')
+      throw new BadRequestException('Invoice is already paid');
+    if (invoice.status === 'cancelled')
+      throw new BadRequestException('Invoice is cancelled');
 
     let customerName = invoice.donorName ?? 'Guest';
     let customerEmail = 'noreply@csediualumni.com';
@@ -89,12 +98,16 @@ export class PaymentController {
 
   /** POST /invoices/sslcommerz/ipn — IPN webhook from SSL Commerz */
   @Post('invoices/sslcommerz/ipn')
-  async handleIpn(@Body() body: Record<string, string>): Promise<{ received: true }> {
+  async handleIpn(
+    @Body() body: Record<string, string>,
+  ): Promise<{ received: true }> {
     const valId = body['val_id'];
     const tranId = body['tran_id'];
     const status = body['status'];
 
-    this.logger.log(`[IPN] Received status=${status} tran_id=${tranId} val_id=${valId}`);
+    this.logger.log(
+      `[IPN] Received status=${status} tran_id=${tranId} val_id=${valId}`,
+    );
 
     if (status !== 'VALID' && status !== 'VALIDATED') {
       this.logger.warn(`[IPN] Non-successful status=${status}, ignoring`);
@@ -127,7 +140,9 @@ export class PaymentController {
           await this.markPaid(validated.tranId, valId);
         }
       } catch (err) {
-        this.logger.warn(`[SUCCESS] Validation attempt failed (IPN may handle it): ${String(err)}`);
+        this.logger.warn(
+          `[SUCCESS] Validation attempt failed (IPN may handle it): ${String(err)}`,
+        );
       }
     }
 
@@ -146,7 +161,9 @@ export class PaymentController {
 
   /** Mark invoice as paid, confirm event registration if applicable */
   private async markPaid(tranId: string, valId: string): Promise<void> {
-    const invoice = await this.invoiceRepo.findOne({ where: { transactionId: tranId } });
+    const invoice = await this.invoiceRepo.findOne({
+      where: { transactionId: tranId },
+    });
 
     if (!invoice) {
       this.logger.warn(`[MARK_PAID] No invoice found for tran_id=${tranId}`);
@@ -154,7 +171,9 @@ export class PaymentController {
     }
 
     if (invoice.status === 'paid') {
-      this.logger.log(`[MARK_PAID] Invoice id=${invoice.id} already paid, skipping`);
+      this.logger.log(
+        `[MARK_PAID] Invoice id=${invoice.id} already paid, skipping`,
+      );
       return;
     }
 
@@ -166,27 +185,34 @@ export class PaymentController {
 
     // Auto-confirm event registration
     if (invoice.type === 'event') {
-      const reg = await this.registrationRepo.findOne({ where: { invoiceId: invoice.id } });
+      const reg = await this.registrationRepo.findOne({
+        where: { invoiceId: invoice.id },
+      });
       if (reg && reg.status === 'pending_payment') {
         reg.status = 'confirmed';
         await this.registrationRepo.save(reg);
-        this.logger.log(`[MARK_PAID] Event registration id=${reg.id} auto-confirmed`);
+        this.logger.log(
+          `[MARK_PAID] Event registration id=${reg.id} auto-confirmed`,
+        );
       }
     }
 
     // Send confirmation email
     if (!invoice.isAnonymous && invoice.userId) {
-      this.sendMailSafe(`payment-verified invoiceId=${invoice.id}`, async () => {
-        const user = await this.users.findById(invoice.userId!);
-        if (!user?.email) return;
-        await this.mail.sendPaymentStatusUpdated(
-          user.email,
-          invoice.id,
-          invoice.description,
-          invoice.totalAmount,
-          'verified',
-        );
-      });
+      this.sendMailSafe(
+        `payment-verified invoiceId=${invoice.id}`,
+        async () => {
+          const user = await this.users.findById(invoice.userId!);
+          if (!user?.email) return;
+          await this.mail.sendPaymentStatusUpdated(
+            user.email,
+            invoice.id,
+            invoice.description,
+            invoice.totalAmount,
+            'verified',
+          );
+        },
+      );
     }
   }
 }

@@ -93,7 +93,10 @@ export class MailService {
     eventTitle: string,
     loginUrl: string,
   ): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'support@csediualumni.com',
+    );
     const isGmail = to.toLowerCase().endsWith('@gmail.com');
 
     await this.send({

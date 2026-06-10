@@ -33,7 +33,9 @@ export class SiteConfigController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(PERMISSIONS.CONFIG_EDIT)
-  updateConfig(@Body() dto: UpdateConfigDto): Promise<Record<string, string | null>> {
+  updateConfig(
+    @Body() dto: UpdateConfigDto,
+  ): Promise<Record<string, string | null>> {
     return this.siteConfig.setMany(dto);
   }
 

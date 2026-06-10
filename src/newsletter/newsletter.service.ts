@@ -8,7 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { NewsletterSubscription } from '../entities/newsletter-subscription.entity';
-import { NewsletterSend, NewsletterSendType } from '../entities/newsletter-send.entity';
+import {
+  NewsletterSend,
+  NewsletterSendType,
+} from '../entities/newsletter-send.entity';
 import { NewsletterDraft } from '../entities/newsletter-draft.entity';
 import { NewsArticle } from '../entities/news-article.entity';
 import { Event } from '../entities/event.entity';
@@ -167,19 +170,25 @@ export class NewsletterService {
   async generateMonthlyDraft(): Promise<void> {
     const now = new Date();
     // Target = previous calendar month
-    const targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const targetYear =
+      now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
     const targetMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1; // 0-indexed
 
     const digestMonth = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
-    const monthLabel = new Date(targetYear, targetMonth, 1).toLocaleString('en-US', {
-      month: 'long',
-      year: 'numeric',
-    });
+    const monthLabel = new Date(targetYear, targetMonth, 1).toLocaleString(
+      'en-US',
+      {
+        month: 'long',
+        year: 'numeric',
+      },
+    );
 
     // Guard: skip if a draft already exists for this month
     const existing = await this.draftRepo.findOne({ where: { digestMonth } });
     if (existing) {
-      this.logger.log(`Monthly draft for ${digestMonth} already exists — skipping.`);
+      this.logger.log(
+        `Monthly draft for ${digestMonth} already exists — skipping.`,
+      );
       return;
     }
 
@@ -202,7 +211,12 @@ export class NewsletterService {
     ]);
 
     const subject = `CSE DIU Alumni Newsletter — ${monthLabel}`;
-    const htmlBody = this._buildDigestHtml(monthLabel, articles, events, campaigns);
+    const htmlBody = this._buildDigestHtml(
+      monthLabel,
+      articles,
+      events,
+      campaigns,
+    );
 
     const draft = this.draftRepo.create({ subject, htmlBody, digestMonth });
     await this.draftRepo.save(draft);

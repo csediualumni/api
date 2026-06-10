@@ -47,7 +47,10 @@ export class AccountingController {
   ): Promise<{ url: string }> {
     if (!file) throw new BadRequestException('No file uploaded');
     const allowed = [
-      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
       'application/pdf',
     ];
     if (!allowed.includes(file.mimetype))
@@ -57,7 +60,10 @@ export class AccountingController {
       throw new BadRequestException('File must be smaller than 10 MB');
     const ext = (file.originalname.split('.').pop() ?? 'bin').toLowerCase();
     const url = await this.uploadService.uploadFile(
-      file.buffer, file.mimetype, ext, 'receipts',
+      file.buffer,
+      file.mimetype,
+      ext,
+      'receipts',
     );
     return { url };
   }
@@ -159,7 +165,10 @@ export class AccountingController {
   @RequirePermissions(PERMISSIONS.ACCOUNTING_READ)
   @Get('summary')
   getSummary(@Query('month') month: string, @Query('year') year: string) {
-    return this.accountingService.getSummary(parseInt(month, 10), parseInt(year, 10));
+    return this.accountingService.getSummary(
+      parseInt(month, 10),
+      parseInt(year, 10),
+    );
   }
 
   // ── Audit Reports ─────────────────────────────────────────────

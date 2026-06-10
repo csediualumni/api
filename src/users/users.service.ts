@@ -1,8 +1,19 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import {
-  IsBoolean, IsInt, IsOptional, IsString, IsArray, Max, Min,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsArray,
+  Max,
+  Min,
 } from 'class-validator';
 import { User } from '../entities/user.entity';
 import { UserRole } from '../entities/user-role.entity';
@@ -16,33 +27,33 @@ import { MemberIdCounter } from '../entities/member-id-counter.entity';
 export type SafeUser = Omit<User, 'password' | 'generateId'>;
 
 export class UpdateProfileDto {
-  @IsOptional() @IsString()  displayName?: string;
-  @IsOptional() @IsString()  phone?: string;
+  @IsOptional() @IsString() displayName?: string;
+  @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsInt() @Min(1970) @Max(2100) batch?: number;
-  @IsOptional() @IsString()  bio?: string;
-  @IsOptional() @IsString()  jobTitle?: string;
-  @IsOptional() @IsString()  company?: string;
-  @IsOptional() @IsString()  industry?: string;
-  @IsOptional() @IsString()  city?: string;
-  @IsOptional() @IsString()  country?: string;
-  @IsOptional() @IsString()  linkedin?: string;
-  @IsOptional() @IsString()  github?: string;
-  @IsOptional() @IsString()  twitter?: string;
-  @IsOptional() @IsString()  website?: string;
+  @IsOptional() @IsString() bio?: string;
+  @IsOptional() @IsString() jobTitle?: string;
+  @IsOptional() @IsString() company?: string;
+  @IsOptional() @IsString() industry?: string;
+  @IsOptional() @IsString() city?: string;
+  @IsOptional() @IsString() country?: string;
+  @IsOptional() @IsString() linkedin?: string;
+  @IsOptional() @IsString() github?: string;
+  @IsOptional() @IsString() twitter?: string;
+  @IsOptional() @IsString() website?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) skills?: string[];
   @IsOptional() @IsBoolean() openToMentoring?: boolean;
   @IsOptional() @IsBoolean() profileVisibility?: boolean;
   // Extended alumni profile fields
-  @IsOptional() @IsString()  gender?: 'male' | 'female';
-  @IsOptional() @IsString()  birthday?: string;
-  @IsOptional() @IsString()  bloodGroup?: string;
-  @IsOptional() @IsString()  nationality?: string;
-  @IsOptional() @IsString()  religion?: string;
-  @IsOptional() @IsString()  presentAddress?: string;
-  @IsOptional() @IsString()  permanentAddress?: string;
-  @IsOptional() @IsString()  profession?: string;
-  @IsOptional() @IsString()  organization?: string;
-  @IsOptional() @IsString()  designation?: string;
+  @IsOptional() @IsString() gender?: 'male' | 'female';
+  @IsOptional() @IsString() birthday?: string;
+  @IsOptional() @IsString() bloodGroup?: string;
+  @IsOptional() @IsString() nationality?: string;
+  @IsOptional() @IsString() religion?: string;
+  @IsOptional() @IsString() presentAddress?: string;
+  @IsOptional() @IsString() permanentAddress?: string;
+  @IsOptional() @IsString() profession?: string;
+  @IsOptional() @IsString() organization?: string;
+  @IsOptional() @IsString() designation?: string;
 }
 
 export interface UpsertExperienceDto {
@@ -232,7 +243,9 @@ export class UsersService {
     batch?: number;
   }): Promise<{ user: User; tempPassword: string }> {
     const tempPassword = data.phone;
-    const hashed = await import('bcryptjs').then((b) => b.hash(tempPassword, 12));
+    const hashed = await import('bcryptjs').then((b) =>
+      b.hash(tempPassword, 12),
+    );
     const user = this.userRepo.create({
       email: data.email.toLowerCase().trim(),
       password: hashed,
@@ -416,11 +429,15 @@ export class UsersService {
 
   async setRoles(userId: string, roleIds: string[]): Promise<SafeUser> {
     // Prevent removing the member role from a user who already has a memberId
-    const memberRole = await this.roleRepo.findOne({ where: { name: 'member' } });
+    const memberRole = await this.roleRepo.findOne({
+      where: { name: 'member' },
+    });
     if (memberRole && !roleIds.includes(memberRole.id)) {
       const userCheck = await this.userRepo.findOne({ where: { id: userId } });
       if (userCheck?.memberId) {
-        throw new Error('Cannot remove the member role from a user who has an assigned member ID.');
+        throw new Error(
+          'Cannot remove the member role from a user who has an assigned member ID.',
+        );
       }
     }
     await this.userRoleRepo.delete({ userId });
@@ -431,12 +448,21 @@ export class UsersService {
     }
     // Auto-generate memberId when the 'member' role is included and the user doesn't have one yet
     if (roleIds.length > 0) {
-      const memberRole = await this.roleRepo.findOne({ where: { name: 'member' } });
+      const memberRole = await this.roleRepo.findOne({
+        where: { name: 'member' },
+      });
       if (memberRole && roleIds.includes(memberRole.id)) {
-        const userCheck = await this.userRepo.findOne({ where: { id: userId } });
+        const userCheck = await this.userRepo.findOne({
+          where: { id: userId },
+        });
         if (userCheck && !userCheck.memberId) {
-          const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
-          await this.userRepo.update(userId, { memberId, profileVisibility: true });
+          const memberId = await this.nextMemberIdForYear(
+            new Date().getFullYear(),
+          );
+          await this.userRepo.update(userId, {
+            memberId,
+            profileVisibility: true,
+          });
         }
       }
     }
@@ -452,8 +478,13 @@ export class UsersService {
     if (role?.name === 'member') {
       const userCheck = await this.userRepo.findOne({ where: { id: userId } });
       if (userCheck && !userCheck.memberId) {
-        const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
-        await this.userRepo.update(userId, { memberId, profileVisibility: true });
+        const memberId = await this.nextMemberIdForYear(
+          new Date().getFullYear(),
+        );
+        await this.userRepo.update(userId, {
+          memberId,
+          profileVisibility: true,
+        });
       }
     }
     const user = await this.userRepo.findOneOrFail({ where: { id: userId } });
@@ -467,7 +498,9 @@ export class UsersService {
     if (role?.name === 'member') {
       const userCheck = await this.userRepo.findOne({ where: { id: userId } });
       if (userCheck?.memberId) {
-        throw new Error('Cannot remove the member role from a user who has an assigned member ID.');
+        throw new Error(
+          'Cannot remove the member role from a user who has an assigned member ID.',
+        );
       }
     }
     await this.userRoleRepo.delete({ userId, roleId });
@@ -577,7 +610,9 @@ export class UsersService {
         // Ensure every imported member has a memberId (covers new users and
         // existing users who were previously missing one)
         if (!user.memberId) {
-          const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
+          const memberId = await this.nextMemberIdForYear(
+            new Date().getFullYear(),
+          );
           await this.userRepo.update(user.id, { memberId });
           user.memberId = memberId;
         }
@@ -622,7 +657,8 @@ export class UsersService {
   async assignMemberId(userId: string): Promise<string> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    if (user.memberId) throw new BadRequestException('User already has a member ID');
+    if (user.memberId)
+      throw new BadRequestException('User already has a member ID');
 
     const memberId = await this.nextMemberIdForYear(new Date().getFullYear());
     await this.userRepo.update(userId, { memberId });

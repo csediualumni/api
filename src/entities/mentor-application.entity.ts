@@ -8,7 +8,11 @@ import {
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
-export type ApplicationStatus = 'pending' | 'reviewing' | 'accepted' | 'rejected';
+export type ApplicationStatus =
+  | 'pending'
+  | 'reviewing'
+  | 'accepted'
+  | 'rejected';
 
 @Entity('mentor_applications')
 export class MentorApplication {

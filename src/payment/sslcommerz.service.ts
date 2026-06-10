@@ -25,8 +25,11 @@ export class SslCommerzService {
 
   constructor(private readonly config: ConfigService) {
     this.storeId = this.config.getOrThrow<string>('SSLCOMMERZ_STORE_ID');
-    this.storePassword = this.config.getOrThrow<string>('SSLCOMMERZ_STORE_PASSWORD');
-    this.isLive = this.config.get<string>('SSLCOMMERZ_IS_LIVE', 'false') === 'true';
+    this.storePassword = this.config.getOrThrow<string>(
+      'SSLCOMMERZ_STORE_PASSWORD',
+    );
+    this.isLive =
+      this.config.get<string>('SSLCOMMERZ_IS_LIVE', 'false') === 'true';
   }
 
   private get sslcz() {
@@ -34,7 +37,10 @@ export class SslCommerzService {
   }
 
   private backendUrl(path: string): string {
-    const base = this.config.get<string>('BACKEND_URL', 'http://localhost:3000');
+    const base = this.config.get<string>(
+      'BACKEND_URL',
+      'http://localhost:3000',
+    );
     return `${base}/api/v1${path}`;
   }
 
@@ -50,9 +56,15 @@ export class SslCommerzService {
       total_amount: params.amount,
       currency: 'BDT',
       tran_id: params.tranId,
-      success_url: this.backendUrl(`/invoices/sslcommerz/success?invoiceId=${params.invoiceId}`),
-      fail_url: this.backendUrl(`/invoices/sslcommerz/fail?invoiceId=${params.invoiceId}&tranId=${params.tranId}`),
-      cancel_url: this.backendUrl(`/invoices/sslcommerz/fail?invoiceId=${params.invoiceId}&tranId=${params.tranId}`),
+      success_url: this.backendUrl(
+        `/invoices/sslcommerz/success?invoiceId=${params.invoiceId}`,
+      ),
+      fail_url: this.backendUrl(
+        `/invoices/sslcommerz/fail?invoiceId=${params.invoiceId}&tranId=${params.tranId}`,
+      ),
+      cancel_url: this.backendUrl(
+        `/invoices/sslcommerz/fail?invoiceId=${params.invoiceId}&tranId=${params.tranId}`,
+      ),
       ipn_url: this.backendUrl('/invoices/sslcommerz/ipn'),
       cus_name: params.customerName,
       cus_email: params.customerEmail,
@@ -66,12 +78,16 @@ export class SslCommerzService {
       product_profile: 'non-physical-goods',
     };
 
-    this.logger.log(`[INIT] Initiating SSL Commerz payment tran_id=${params.tranId} amount=${params.amount}`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.logger.log(
+      `[INIT] Initiating SSL Commerz payment tran_id=${params.tranId} amount=${params.amount}`,
+    );
+
     const response: any = await this.sslcz.init(data);
 
     if (!response?.GatewayPageURL) {
-      this.logger.error(`[INIT] No GatewayPageURL returned: ${JSON.stringify(response)}`);
+      this.logger.error(
+        `[INIT] No GatewayPageURL returned: ${JSON.stringify(response)}`,
+      );
       throw new Error('SSL Commerz did not return a gateway URL');
     }
 
@@ -81,7 +97,7 @@ export class SslCommerzService {
 
   async validatePayment(valId: string): Promise<SslValidateResult> {
     this.logger.log(`[VALIDATE] Validating val_id=${valId}`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const response: any = await this.sslcz.validate({ val_id: valId });
 
     const valid =

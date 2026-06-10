@@ -38,18 +38,30 @@ export class AccountingService {
   }
 
   async createCategory(dto: CreateCategoryDto): Promise<AccountCategory> {
-    const existing = await this.categoryRepo.findOne({ where: { name: dto.name } });
-    if (existing) throw new ConflictException('A category with this name already exists');
-    const cat = this.categoryRepo.create({ name: dto.name, type: dto.type ?? 'both' });
+    const existing = await this.categoryRepo.findOne({
+      where: { name: dto.name },
+    });
+    if (existing)
+      throw new ConflictException('A category with this name already exists');
+    const cat = this.categoryRepo.create({
+      name: dto.name,
+      type: dto.type ?? 'both',
+    });
     return this.categoryRepo.save(cat);
   }
 
-  async updateCategory(id: string, dto: CreateCategoryDto): Promise<AccountCategory> {
+  async updateCategory(
+    id: string,
+    dto: CreateCategoryDto,
+  ): Promise<AccountCategory> {
     const cat = await this.categoryRepo.findOne({ where: { id } });
     if (!cat) throw new NotFoundException('Category not found');
     if (dto.name && dto.name !== cat.name) {
-      const conflict = await this.categoryRepo.findOne({ where: { name: dto.name } });
-      if (conflict) throw new ConflictException('A category with this name already exists');
+      const conflict = await this.categoryRepo.findOne({
+        where: { name: dto.name },
+      });
+      if (conflict)
+        throw new ConflictException('A category with this name already exists');
     }
     Object.assign(cat, dto);
     return this.categoryRepo.save(cat);
@@ -58,8 +70,11 @@ export class AccountingService {
   async removeCategory(id: string): Promise<void> {
     const cat = await this.categoryRepo.findOne({ where: { id } });
     if (!cat) throw new NotFoundException('Category not found');
-    if (cat.isSystem) throw new BadRequestException('System categories cannot be deleted');
-    const usageCount = await this.transactionRepo.count({ where: { categoryId: id } });
+    if (cat.isSystem)
+      throw new BadRequestException('System categories cannot be deleted');
+    const usageCount = await this.transactionRepo.count({
+      where: { categoryId: id },
+    });
     if (usageCount > 0)
       throw new BadRequestException('Category is in use and cannot be deleted');
     await this.categoryRepo.remove(cat);
@@ -85,7 +100,8 @@ export class AccountingService {
       .addOrderBy('t.createdAt', 'DESC');
 
     if (filters.type) qb.andWhere('t.type = :type', { type: filters.type });
-    if (filters.categoryId) qb.andWhere('t.categoryId = :catId', { catId: filters.categoryId });
+    if (filters.categoryId)
+      qb.andWhere('t.categoryId = :catId', { catId: filters.categoryId });
 
     if (filters.year && filters.month) {
       const monthStr = String(filters.month).padStart(2, '0');
@@ -118,8 +134,13 @@ export class AccountingService {
     return t;
   }
 
-  async createTransaction(dto: CreateTransactionDto, userId: string): Promise<AccountTransaction> {
-    const cat = await this.categoryRepo.findOne({ where: { id: dto.categoryId } });
+  async createTransaction(
+    dto: CreateTransactionDto,
+    userId: string,
+  ): Promise<AccountTransaction> {
+    const cat = await this.categoryRepo.findOne({
+      where: { id: dto.categoryId },
+    });
     if (!cat) throw new NotFoundException('Category not found');
 
     const tx = this.transactionRepo.create({
@@ -143,7 +164,9 @@ export class AccountingService {
       Object.assign(tx, allowed);
     } else {
       if (dto.categoryId) {
-        const cat = await this.categoryRepo.findOne({ where: { id: dto.categoryId } });
+        const cat = await this.categoryRepo.findOne({
+          where: { id: dto.categoryId },
+        });
         if (!cat) throw new NotFoundException('Category not found');
       }
       Object.assign(tx, dto);
@@ -160,11 +183,16 @@ export class AccountingService {
    * Import all verified InvoicePayments in a given month/year that haven't
    * been imported yet. Returns the number of newly created transactions.
    */
-  async autoImportPayments(dto: AutoImportDto, userId: string): Promise<{ imported: number }> {
+  async autoImportPayments(
+    dto: AutoImportDto,
+    userId: string,
+  ): Promise<{ imported: number }> {
     const monthStr = String(dto.month).padStart(2, '0');
     const lastDay = new Date(dto.year, dto.month, 0).getDate();
     const from = new Date(`${dto.year}-${monthStr}-01T00:00:00.000Z`);
-    const to = new Date(`${dto.year}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`);
+    const to = new Date(
+      `${dto.year}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`,
+    );
 
     const payments = await this.paymentRepo.find({
       where: { status: 'verified', createdAt: Between(from, to) },
@@ -189,20 +217,24 @@ export class AccountingService {
       where: { name: 'Donations / Fundraising' },
     });
     if (!defaultCat) {
-      defaultCat = await this.categoryRepo.findOne({ where: { type: 'income' } });
+      defaultCat = await this.categoryRepo.findOne({
+        where: { type: 'income' },
+      });
     }
     if (!defaultCat) {
       defaultCat = await this.categoryRepo.findOne({ where: { type: 'both' } });
     }
     if (!defaultCat) {
-      throw new BadRequestException('No income category found. Please create one first.');
+      throw new BadRequestException(
+        'No income category found. Please create one first.',
+      );
     }
 
     const transactions = toImport.map((p) => {
       const paymentDate = new Date(p.createdAt);
       const dateStr = `${paymentDate.getUTCFullYear()}-${String(paymentDate.getUTCMonth() + 1).padStart(2, '0')}-${String(paymentDate.getUTCDate()).padStart(2, '0')}`;
       const invoiceType = p.invoice?.type ?? 'other';
-      let catOverride = defaultCat!;
+      const catOverride = defaultCat;
       // Auto-assign category based on invoice type
       if (invoiceType === 'membership') {
         // Will be assigned below if found, else default
@@ -221,8 +253,12 @@ export class AccountingService {
     });
 
     // For membership invoices, try to find the Membership Fees category
-    const membershipCat = await this.categoryRepo.findOne({ where: { name: 'Membership Fees' } });
-    const eventCat = await this.categoryRepo.findOne({ where: { name: 'Event Ticket Sales' } });
+    const membershipCat = await this.categoryRepo.findOne({
+      where: { name: 'Membership Fees' },
+    });
+    const eventCat = await this.categoryRepo.findOne({
+      where: { name: 'Event Ticket Sales' },
+    });
 
     for (let i = 0; i < toImport.length; i++) {
       const invoiceType = toImport[i].invoice?.type;
@@ -243,7 +279,12 @@ export class AccountingService {
   ): Promise<{
     totalIncome: number;
     totalExpense: number;
-    breakdown: { categoryId: string; name: string; type: string; amount: number }[];
+    breakdown: {
+      categoryId: string;
+      name: string;
+      type: string;
+      amount: number;
+    }[];
   }> {
     const monthStr = String(month).padStart(2, '0');
     const lastDay = new Date(year, month, 0).getDate();
@@ -296,14 +337,21 @@ export class AccountingService {
     return r;
   }
 
-  async createReport(dto: CreateAuditReportDto, userId: string): Promise<AuditReport> {
+  async createReport(
+    dto: CreateAuditReportDto,
+    userId: string,
+  ): Promise<AuditReport> {
     const existing = await this.reportRepo.findOne({
       where: { month: dto.month, year: dto.year },
     });
-    if (existing) throw new ConflictException('A report for this month/year already exists');
+    if (existing)
+      throw new ConflictException(
+        'A report for this month/year already exists',
+      );
 
     const summary = await this.getSummary(dto.month, dto.year);
-    const closing = dto.openingBalance + summary.totalIncome - summary.totalExpense;
+    const closing =
+      dto.openingBalance + summary.totalIncome - summary.totalExpense;
 
     const report = this.reportRepo.create({
       month: dto.month,
@@ -325,7 +373,8 @@ export class AccountingService {
     const summary = await this.getSummary(report.month, report.year);
     report.totalIncome = summary.totalIncome;
     report.totalExpense = summary.totalExpense;
-    report.closingBalance = report.openingBalance + summary.totalIncome - summary.totalExpense;
+    report.closingBalance =
+      report.openingBalance + summary.totalIncome - summary.totalExpense;
     report.isPublished = true;
     report.publishedAt = new Date();
     return this.reportRepo.save(report);
@@ -347,7 +396,12 @@ export class AccountingService {
     report: AuditReport;
     incomeTransactions: AccountTransaction[];
     expenseTransactions: AccountTransaction[];
-    breakdown: { categoryId: string; name: string; type: string; amount: number }[];
+    breakdown: {
+      categoryId: string;
+      name: string;
+      type: string;
+      amount: number;
+    }[];
   }> {
     const report = await this.findOneReport(id);
     const { breakdown } = await this.getSummary(report.month, report.year);

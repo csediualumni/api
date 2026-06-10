@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mentor } from '../entities/mentor.entity';
-import { MentorApplication, ApplicationStatus } from '../entities/mentor-application.entity';
+import {
+  MentorApplication,
+  ApplicationStatus,
+} from '../entities/mentor-application.entity';
 
 export interface CreateMentorDto {
   name: string;
@@ -44,7 +47,9 @@ export class MentorshipService {
   // ── Mentors ────────────────────────────────────────────────────
 
   findAllMentors(): Promise<Mentor[]> {
-    return this.mentorRepo.find({ order: { featured: 'DESC', createdAt: 'ASC' } });
+    return this.mentorRepo.find({
+      order: { featured: 'DESC', createdAt: 'ASC' },
+    });
   }
 
   async findMentorById(id: string): Promise<Mentor> {
@@ -98,7 +103,9 @@ export class MentorshipService {
 
   /** Returns the most recent application submitted with the given email, or null if none. */
   findMyApplication(email: string): Promise<MentorApplication | null> {
-    return this.appRepo.findOne({ where: { email }, order: { createdAt: 'DESC' } }).then((r) => r ?? null);
+    return this.appRepo
+      .findOne({ where: { email }, order: { createdAt: 'DESC' } })
+      .then((r) => r ?? null);
   }
 
   async updateApplicationStatus(

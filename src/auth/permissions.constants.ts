@@ -204,7 +204,8 @@ export const ALL_PERMISSIONS: {
   },
   {
     key: 'events:distribute',
-    description: 'Operate event booth — scan QR codes and record kit/food distribution',
+    description:
+      'Operate event booth — scan QR codes and record kit/food distribution',
     group: 'Events',
   },
   {
@@ -274,7 +275,8 @@ export const ALL_PERMISSIONS: {
   },
   {
     key: 'config:edit',
-    description: 'Edit site configuration (branding, contact info, social links)',
+    description:
+      'Edit site configuration (branding, contact info, social links)',
     group: 'Config',
   },
   {
@@ -284,7 +286,8 @@ export const ALL_PERMISSIONS: {
   },
   {
     key: 'accounting:write',
-    description: 'Manage accounting transactions, categories, and publish audit reports',
+    description:
+      'Manage accounting transactions, categories, and publish audit reports',
     group: 'Accounting',
   },
 ];

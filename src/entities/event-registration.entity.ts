@@ -39,10 +39,20 @@ export class EventRegistration {
   status: RegistrationStatus;
 
   /** Linked invoice covering ticket + family fees + donation */
-  @Column({ name: 'invoice_id', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'invoice_id',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   invoiceId: string | null;
 
-  @Column({ name: 't_shirt_size', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 't_shirt_size',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   tShirtSize: TShirtSize | null;
 
   /** Number of additional family members (not counting the primary registrant) */
@@ -69,7 +79,9 @@ export class EventRegistration {
   @JoinColumn({ name: 'invoice_id' })
   invoice: Invoice | null;
 
-  @OneToMany(() => EventFamilyMember, (fm) => fm.registration, { cascade: true })
+  @OneToMany(() => EventFamilyMember, (fm) => fm.registration, {
+    cascade: true,
+  })
   familyMembers: EventFamilyMember[];
 
   @OneToMany(() => EventCheckIn, (ci) => ci.registration, { cascade: true })

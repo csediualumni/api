@@ -128,7 +128,7 @@ export class MentorshipController {
     @Param('id') id: string,
     @Body() dto: UpdateApplicationStatusDto,
   ) {
-    return this.mentorship.updateApplicationStatus(id, dto.status as ApplicationStatus);
+    return this.mentorship.updateApplicationStatus(id, dto.status);
   }
 
   @Post()

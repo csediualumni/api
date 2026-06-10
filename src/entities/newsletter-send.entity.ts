@@ -34,7 +34,12 @@ export class NewsletterSend {
   type: NewsletterSendType;
 
   /** Display name or email of the admin who triggered the send */
-  @Column({ name: 'sent_by_name', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'sent_by_name',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   sentByName: string | null;
 
   @CreateDateColumn({ name: 'sent_at' })

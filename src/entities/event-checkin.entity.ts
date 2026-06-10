@@ -37,13 +37,20 @@ export class EventCheckIn {
   type: CheckInType;
 
   /** Used when type = 'custom' */
-  @Column({ name: 'custom_label', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'custom_label',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   customLabel: string | null;
 
   @Column({ name: 'checked_by_user_id', type: 'varchar' })
   checkedByUserId: string;
 
-  @ManyToOne(() => EventRegistration, (reg) => reg.checkIns, { onDelete: 'CASCADE' })
+  @ManyToOne(() => EventRegistration, (reg) => reg.checkIns, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'registration_id' })
   registration: EventRegistration;
 

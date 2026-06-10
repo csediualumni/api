@@ -21,7 +21,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions.constants';
-import { UsersService, ImportMemberRow, UpdateProfileDto } from '../users/users.service';
+import {
+  UsersService,
+  ImportMemberRow,
+  UpdateProfileDto,
+} from '../users/users.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { ContactService } from '../contact/contact.service';
 import type { ContactTicketStatus } from '../entities/contact-ticket.entity';
@@ -50,7 +54,16 @@ import {
   UpdateIncomeDto,
 } from '../events/events.service';
 import { UploadService } from '../upload/upload.service';
-import { IsArray, IsString, IsNotEmpty, IsIn, IsUUID, IsOptional, IsInt, Min } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsNotEmpty,
+  IsIn,
+  IsUUID,
+  IsOptional,
+  IsInt,
+  Min,
+} from 'class-validator';
 
 class UpdateDesignationMappingDto {
   @IsOptional() @IsUUID() roleId?: string;
@@ -245,7 +258,12 @@ export class AdminController {
   sendNewsletter(@Body() dto: SendNewsletterDto, @Req() req: Request) {
     const user = req.user as { displayName?: string | null; email?: string };
     const sentByName = user?.displayName || user?.email || undefined;
-    return this.newsletter.sendBroadcast(dto.subject, dto.htmlBody, sentByName, 'manual');
+    return this.newsletter.sendBroadcast(
+      dto.subject,
+      dto.htmlBody,
+      sentByName,
+      'manual',
+    );
   }
 
   // ── Contact Tickets ────────────────────────────────────────
@@ -386,7 +404,10 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: UpdateDesignationMappingDto,
   ) {
-    return this.committeesService.updateMapping(id, { roleId: dto.roleId, priority: dto.priority });
+    return this.committeesService.updateMapping(id, {
+      roleId: dto.roleId,
+      priority: dto.priority,
+    });
   }
 
   @Delete('designation-roles/:id')
@@ -486,7 +507,10 @@ export class AdminController {
   @Delete('events/:id/sponsors/:sponsorId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
-  removeSponsor(@Param('id') id: string, @Param('sponsorId') sponsorId: string) {
+  removeSponsor(
+    @Param('id') id: string,
+    @Param('sponsorId') sponsorId: string,
+  ) {
     return this.eventsService.removeSponsor(id, sponsorId);
   }
 
@@ -500,14 +524,21 @@ export class AdminController {
 
   @Post('events/:id/expenses')
   @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
-  createExpense(@Param('id') id: string, @Body() dto: CreateExpenseDto, @Req() req: Request) {
+  createExpense(
+    @Param('id') id: string,
+    @Body() dto: CreateExpenseDto,
+    @Req() req: Request,
+  ) {
     const { id: userId } = req.user as { id: string };
     return this.eventsService.createExpense(id, dto, userId);
   }
 
   @Patch('events/:id/expenses/:expenseId')
   @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
-  updateExpense(@Param('expenseId') expenseId: string, @Body() dto: UpdateExpenseDto) {
+  updateExpense(
+    @Param('expenseId') expenseId: string,
+    @Body() dto: UpdateExpenseDto,
+  ) {
     return this.eventsService.updateExpense(expenseId, dto);
   }
 
@@ -528,14 +559,21 @@ export class AdminController {
 
   @Post('events/:id/income')
   @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
-  createIncome(@Param('id') id: string, @Body() dto: CreateIncomeDto, @Req() req: Request) {
+  createIncome(
+    @Param('id') id: string,
+    @Body() dto: CreateIncomeDto,
+    @Req() req: Request,
+  ) {
     const { id: userId } = req.user as { id: string };
     return this.eventsService.createIncome(id, dto, userId);
   }
 
   @Patch('events/:id/income/:incomeId')
   @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
-  updateIncome(@Param('incomeId') incomeId: string, @Body() dto: UpdateIncomeDto) {
+  updateIncome(
+    @Param('incomeId') incomeId: string,
+    @Body() dto: UpdateIncomeDto,
+  ) {
     return this.eventsService.updateIncome(incomeId, dto);
   }
 

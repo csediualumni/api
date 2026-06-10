@@ -1,5 +1,16 @@
-import { IsString, IsNotEmpty, IsIn, IsOptional, IsInt, Min, IsDateString } from 'class-validator';
-import type { TransactionType, TransactionReferenceType } from '../../entities/account-transaction.entity';
+import {
+  IsString,
+  IsNotEmpty,
+  IsIn,
+  IsOptional,
+  IsInt,
+  Min,
+  IsDateString,
+} from 'class-validator';
+import type {
+  TransactionType,
+  TransactionReferenceType,
+} from '../../entities/account-transaction.entity';
 
 export class CreateTransactionDto {
   @IsIn(['income', 'expense'])

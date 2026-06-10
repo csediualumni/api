@@ -33,14 +33,24 @@ export class SiteConfigService {
 
   async uploadLogo(file: Express.Multer.File): Promise<string> {
     const ext = (file.originalname.split('.').pop() ?? 'png').toLowerCase();
-    const url = await this.upload.uploadFile(file.buffer, file.mimetype, ext, 'branding');
+    const url = await this.upload.uploadFile(
+      file.buffer,
+      file.mimetype,
+      ext,
+      'branding',
+    );
     await this.set('logoUrl', url);
     return url;
   }
 
   async uploadFavicon(file: Express.Multer.File): Promise<string> {
     const ext = (file.originalname.split('.').pop() ?? 'png').toLowerCase();
-    const url = await this.upload.uploadFile(file.buffer, file.mimetype, ext, 'branding');
+    const url = await this.upload.uploadFile(
+      file.buffer,
+      file.mimetype,
+      ext,
+      'branding',
+    );
     await this.set('faviconUrl', url);
     return url;
   }

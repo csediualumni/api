@@ -179,11 +179,15 @@ export class CommitteesService {
   }
 
   /** Sorts members within each committee by designation priority then displayName. */
-  private async sortMembersInCommittees(committees: Committee[]): Promise<Committee[]> {
+  private async sortMembersInCommittees(
+    committees: Committee[],
+  ): Promise<Committee[]> {
     if (committees.every((c) => c.members.length === 0)) return committees;
 
     const mappings = await this.mappingRepo.find();
-    const priorityMap = new Map<string, number>(mappings.map((m) => [m.designation, m.priority]));
+    const priorityMap = new Map<string, number>(
+      mappings.map((m) => [m.designation, m.priority]),
+    );
 
     for (const committee of committees) {
       committee.members.sort((a, b) => {

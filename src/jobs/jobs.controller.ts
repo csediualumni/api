@@ -25,7 +25,13 @@ import { PERMISSIONS } from '../auth/permissions.constants';
 import { JobsService } from './jobs.service';
 import type { JobType } from '../entities/job-posting.entity';
 
-const JOB_TYPES: JobType[] = ['Full-time', 'Part-time', 'Internship', 'Remote', 'Contract'];
+const JOB_TYPES: JobType[] = [
+  'Full-time',
+  'Part-time',
+  'Internship',
+  'Remote',
+  'Contract',
+];
 
 // ── DTOs ──────────────────────────────────────────────────────────
 

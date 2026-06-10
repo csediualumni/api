@@ -27,10 +27,17 @@ export class EventFamilyMember {
   @Column({ type: 'varchar' })
   name: string;
 
-  @Column({ name: 't_shirt_size', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 't_shirt_size',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   tShirtSize: TShirtSize | null;
 
-  @ManyToOne(() => EventRegistration, (reg) => reg.familyMembers, { onDelete: 'CASCADE' })
+  @ManyToOne(() => EventRegistration, (reg) => reg.familyMembers, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'registration_id' })
   registration: EventRegistration;
 

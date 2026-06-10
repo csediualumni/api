@@ -37,7 +37,10 @@ export class JobsService {
   }
 
   async findById(id: string): Promise<JobPosting> {
-    const job = await this.repo.findOne({ where: { id }, relations: ['postedBy'] });
+    const job = await this.repo.findOne({
+      where: { id },
+      relations: ['postedBy'],
+    });
     if (!job) throw new NotFoundException(`Job posting ${id} not found`);
     return job;
   }

@@ -42,20 +42,28 @@ export class InvoicesService {
   }
 
   private paymentUrl(invoiceId: string): string {
-    const base = this.config.get<string>('FRONTEND_URL', 'http://localhost:4200');
+    const base = this.config.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:4200',
+    );
     return `${base}/payment?invoiceId=${invoiceId}`;
   }
 
   private sendMailSafe(label: string, task: () => Promise<void>): void {
     task().catch((err: unknown) =>
-      this.logger.error(`[EMAIL] Failed to send "${label}": ${err instanceof Error ? err.message : String(err)}`),
+      this.logger.error(
+        `[EMAIL] Failed to send "${label}": ${err instanceof Error ? err.message : String(err)}`,
+      ),
     );
   }
 
   async create(dto: CreateInvoiceDto): Promise<Invoice> {
-    this.logger.log(`[CREATE] type=${dto.type ?? 'donation'} amount=${dto.totalAmount}`);
+    this.logger.log(
+      `[CREATE] type=${dto.type ?? 'donation'} amount=${dto.totalAmount}`,
+    );
 
-    if (dto.totalAmount <= 0) throw new BadRequestException('totalAmount must be positive');
+    if (dto.totalAmount <= 0)
+      throw new BadRequestException('totalAmount must be positive');
 
     const inv = this.invoiceRepo.create({
       type: dto.type ?? 'donation',
@@ -75,7 +83,13 @@ export class InvoicesService {
       this.sendMailSafe(`invoice-created invoiceId=${saved.id}`, async () => {
         const email = await this.getUserEmail(saved.userId);
         if (!email) return;
-        await this.mail.sendInvoiceCreated(email, saved.id, saved.description, saved.totalAmount, this.paymentUrl(saved.id));
+        await this.mail.sendInvoiceCreated(
+          email,
+          saved.id,
+          saved.description,
+          saved.totalAmount,
+          this.paymentUrl(saved.id),
+        );
       });
     }
     return saved;
@@ -87,10 +101,16 @@ export class InvoicesService {
     return inv;
   }
 
-  async getRecentDonors(limit = 8): Promise<{
-    donorName: string | null; isAnonymous: boolean; totalAmount: number;
-    campaignTitle: string | null; createdAt: Date; metadata: Record<string, unknown> | null;
-  }[]> {
+  async getRecentDonors(limit = 8): Promise<
+    {
+      donorName: string | null;
+      isAnonymous: boolean;
+      totalAmount: number;
+      campaignTitle: string | null;
+      createdAt: Date;
+      metadata: Record<string, unknown> | null;
+    }[]
+  > {
     const invoices = await this.invoiceRepo.find({
       where: { type: 'donation', status: 'paid' },
       order: { createdAt: 'DESC' },
@@ -107,7 +127,10 @@ export class InvoicesService {
   }
 
   findMyInvoices(userId: string): Promise<Invoice[]> {
-    return this.invoiceRepo.find({ where: { userId }, order: { createdAt: 'DESC' } });
+    return this.invoiceRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   findAll(page = 1, limit = 20) {
@@ -122,7 +145,10 @@ export class InvoicesService {
     return this.invoiceRepo.count();
   }
 
-  async updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
+  async updateInvoiceStatus(
+    id: string,
+    status: InvoiceStatus,
+  ): Promise<Invoice> {
     const inv = await this.findById(id);
     inv.status = status;
     await this.invoiceRepo.save(inv);

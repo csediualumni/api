@@ -57,7 +57,12 @@ export class ResearchPaper {
   @Column({ type: 'boolean', default: false })
   featured: boolean;
 
-  @Column({ name: 'submitted_by_id', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'submitted_by_id',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   submittedById: string | null;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL', eager: false })

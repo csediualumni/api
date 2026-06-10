@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ResearchPaper, VenueType } from '../entities/research-paper.entity';
@@ -59,7 +63,11 @@ export class ResearchService {
     return this.repo.save(paper);
   }
 
-  async updateForUser(id: string, userId: string, dto: UpdateResearchPaperDto): Promise<ResearchPaper> {
+  async updateForUser(
+    id: string,
+    userId: string,
+    dto: UpdateResearchPaperDto,
+  ): Promise<ResearchPaper> {
     const existing = await this.findById(id);
     if (existing.submittedById !== userId) {
       throw new ForbiddenException('You do not own this paper.');
@@ -76,7 +84,10 @@ export class ResearchService {
     await this.repo.remove(existing);
   }
 
-  async update(id: string, dto: UpdateResearchPaperDto): Promise<ResearchPaper> {
+  async update(
+    id: string,
+    dto: UpdateResearchPaperDto,
+  ): Promise<ResearchPaper> {
     const existing = await this.findById(id);
     await this.repo.save({ ...existing, ...dto, id });
     return this.findById(id);

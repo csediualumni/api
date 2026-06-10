@@ -127,10 +127,7 @@ export class InvoicesController {
   @Patch(':id/note')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(PERMISSIONS.INVOICES_WRITE)
-  updateAdminNote(
-    @Param('id') id: string,
-    @Body() dto: UpdateAdminNoteDto,
-  ) {
+  updateAdminNote(@Param('id') id: string, @Body() dto: UpdateAdminNoteDto) {
     return this.invoices.updateAdminNote(id, dto.adminNote ?? '');
   }
 }

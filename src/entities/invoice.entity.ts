@@ -8,11 +8,7 @@ import {
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
-export type InvoiceStatus =
-  | 'pending'
-  | 'paid'
-  | 'cancelled'
-  | 'refunded';
+export type InvoiceStatus = 'pending' | 'paid' | 'cancelled' | 'refunded';
 export type InvoiceType = 'donation' | 'event' | 'membership' | 'other';
 
 @Entity('invoices')

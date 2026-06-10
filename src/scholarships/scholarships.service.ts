@@ -30,7 +30,9 @@ export class ScholarshipsService {
   ) {}
 
   findAll(): Promise<Scholarship[]> {
-    return this.repo.find({ order: { featured: 'DESC', urgent: 'DESC', createdAt: 'DESC' } });
+    return this.repo.find({
+      order: { featured: 'DESC', urgent: 'DESC', createdAt: 'DESC' },
+    });
   }
 
   async findById(id: string): Promise<Scholarship> {

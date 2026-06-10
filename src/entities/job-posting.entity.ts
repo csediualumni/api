@@ -11,7 +11,12 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './user.entity';
 
-export type JobType = 'Full-time' | 'Part-time' | 'Internship' | 'Remote' | 'Contract';
+export type JobType =
+  | 'Full-time'
+  | 'Part-time'
+  | 'Internship'
+  | 'Remote'
+  | 'Contract';
 
 @Entity('job_postings')
 export class JobPosting {
@@ -67,7 +72,12 @@ export class JobPosting {
   featured: boolean;
 
   // ── Relation to the user who posted this job ──────────────────
-  @Column({ name: 'posted_by_id', type: 'varchar', nullable: true, default: null })
+  @Column({
+    name: 'posted_by_id',
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
   postedById: string | null;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL', eager: false })

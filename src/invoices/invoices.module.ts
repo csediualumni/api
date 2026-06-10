@@ -7,11 +7,7 @@ import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Invoice]),
-    MailModule,
-    UsersModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Invoice]), MailModule, UsersModule],
   controllers: [InvoicesController],
   providers: [InvoicesService],
   exports: [InvoicesService],

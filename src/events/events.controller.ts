@@ -55,8 +55,15 @@ export class EventsController {
   /** Public endpoint for guest event registration (creates account if needed) */
   @Post(':id/register-with-profile')
   @HttpCode(HttpStatus.CREATED)
-  registerWithProfile(@Param('id') id: string, @Body() dto: RegisterWithProfileDto, @Req() req: Request) {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:4200');
+  registerWithProfile(
+    @Param('id') id: string,
+    @Body() dto: RegisterWithProfileDto,
+    @Req() req: Request,
+  ) {
+    const frontendUrl = this.config.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:4200',
+    );
     return this.eventsService.registerWithProfile(id, dto, frontendUrl);
   }
 
@@ -86,7 +93,10 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   getMyQrUrl(@Param('id') id: string, @Req() req: Request) {
     const { id: userId } = req.user as { id: string };
-    const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:4200');
+    const frontendUrl = this.config.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:4200',
+    );
     return this.eventsService.getMyQrUrl(id, userId, frontendUrl);
   }
 
@@ -103,7 +113,11 @@ export class EventsController {
 
   @Post(':id/register')
   @UseGuards(JwtAuthGuard)
-  register(@Param('id') id: string, @Body() dto: RegisterEventDto, @Req() req: Request) {
+  register(
+    @Param('id') id: string,
+    @Body() dto: RegisterEventDto,
+    @Req() req: Request,
+  ) {
     const { id: userId } = req.user as { id: string };
     return this.eventsService.register(id, userId, dto);
   }

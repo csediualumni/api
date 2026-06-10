@@ -72,7 +72,7 @@ const ds = new DataSource({
     MentorApplication,
     Scholarship,
     JobPosting,
-        MemberIdCounter,
+    MemberIdCounter,
     SiteConfig,
     AccountCategory,
     AccountTransaction,
@@ -253,7 +253,11 @@ async function main() {
   console.log('▶ Seeding accounting categories…');
   const categoryRepo = ds.getRepository(AccountCategory);
 
-  const defaultCategories: { name: string; type: 'income' | 'expense' | 'both'; isSystem: boolean }[] = [
+  const defaultCategories: {
+    name: string;
+    type: 'income' | 'expense' | 'both';
+    isSystem: boolean;
+  }[] = [
     // Income
     { name: 'Donations / Fundraising', type: 'income', isSystem: true },
     { name: 'Membership Fees', type: 'income', isSystem: true },
@@ -263,7 +267,11 @@ async function main() {
     { name: 'Bank Interest', type: 'income', isSystem: true },
     // Expense
     { name: 'Event Expenses', type: 'expense', isSystem: true },
-    { name: 'Administrative / Office Expenses', type: 'expense', isSystem: true },
+    {
+      name: 'Administrative / Office Expenses',
+      type: 'expense',
+      isSystem: true,
+    },
     { name: 'Scholarship Disbursements', type: 'expense', isSystem: true },
     { name: 'Marketing / Printing', type: 'expense', isSystem: true },
     { name: 'Software / Tools', type: 'expense', isSystem: true },
