@@ -28,6 +28,7 @@ export type SafeUser = Omit<User, 'password' | 'generateId'>;
 
 export class UpdateProfileDto {
   @IsOptional() @IsString() displayName?: string;
+  @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsInt() @Min(1970) @Max(2100) batch?: number;
   @IsOptional() @IsString() bio?: string;
