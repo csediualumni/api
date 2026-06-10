@@ -578,6 +578,14 @@ export class EventsService {
       throw new BadRequestException('Registration is closed for this event.');
     }
 
+    const now = new Date();
+    if (event.registrationOpenAt && now < event.registrationOpenAt) {
+      throw new BadRequestException('Registration for this event has not opened yet.');
+    }
+    if (event.registrationCloseAt && now > event.registrationCloseAt) {
+      throw new BadRequestException('Registration for this event is closed.');
+    }
+
     const isPaidEvent = event.ticketPrice !== null && event.ticketPrice > 0;
     if (isPaidEvent && daysUntil(event.date) < PAID_EVENT_CUTOFF_DAYS) {
       throw new BadRequestException(
@@ -1138,6 +1146,18 @@ export class EventsService {
   }> {
     const event = await this.eventRepo.findOne({ where: { id: eventId, published: true } });
     if (!event) throw new NotFoundException('Event not found or not published.');
+
+    if (event.status !== 'upcoming' && event.status !== 'ongoing') {
+      throw new BadRequestException('Registration is closed for this event.');
+    }
+
+    const now = new Date();
+    if (event.registrationOpenAt && now < event.registrationOpenAt) {
+      throw new BadRequestException('Registration for this event has not opened yet.');
+    }
+    if (event.registrationCloseAt && now > event.registrationCloseAt) {
+      throw new BadRequestException('Registration for this event is closed.');
+    }
 
     const email = dto.profile.email.toLowerCase().trim();
     let user = await this.userRepo.findOne({ where: { email } });
