@@ -429,6 +429,13 @@ export class AdminController {
     return this.eventsService.remove(id);
   }
 
+  @Delete('events/:id/registrations')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
+  flushRegistrations(@Param('id') id: string) {
+    return this.eventsService.flushRegistrations(id);
+  }
+
   @Post('events/:id/publish')
   @RequirePermissions(PERMISSIONS.EVENTS_WRITE)
   publishEvent(@Param('id') id: string) {

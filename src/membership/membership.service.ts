@@ -126,8 +126,6 @@ export class MembershipService {
     if (app.invoiceId) {
       invoice = await this.invoiceRepo.findOne({
         where: { id: app.invoiceId },
-        relations: { payments: true },
-        order: { payments: { createdAt: 'ASC' } },
       });
     }
 

@@ -43,6 +43,11 @@ import { EventSponsor } from './entities/event-sponsor.entity';
 import { EventExpense } from './entities/event-expense.entity';
 import { EventIncome } from './entities/event-income.entity';
 import { EventCheckIn } from './entities/event-checkin.entity';
+import { Department } from './entities/department.entity';
+import { AcademicShift } from './entities/academic-shift.entity';
+import { AcademicSession } from './entities/academic-session.entity';
+import { EventDistributionItem } from './entities/event-distribution-item.entity';
+import { EventDistribution } from './entities/event-distribution.entity';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { Campaign } from './entities/campaign.entity';
 import { GalleryModule } from './gallery/gallery.module';
@@ -105,6 +110,11 @@ import { PaymentModule } from './payment/payment.module';
           EventExpense,
           EventIncome,
           EventCheckIn,
+          Department,
+          AcademicShift,
+          AcademicSession,
+          EventDistributionItem,
+          EventDistribution,
           Campaign,
           GalleryAlbum,
           GalleryItem,

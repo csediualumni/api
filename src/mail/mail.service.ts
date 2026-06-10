@@ -85,6 +85,61 @@ export class MailService {
     this.logger.log(`Password reset email sent to ${to}`);
   }
 
+  /** Sent to newly created guest accounts after event registration */
+  async sendGuestWelcome(
+    to: string,
+    displayName: string,
+    tempPassword: string,
+    eventTitle: string,
+    loginUrl: string,
+  ): Promise<void> {
+    const from = this.config.get<string>('SMTP_FROM', 'support@csediualumni.com');
+    const isGmail = to.toLowerCase().endsWith('@gmail.com');
+
+    await this.send({
+      from: `"CSE DIU Alumni" <${from}>`,
+      to,
+      subject: `Welcome to CSE DIU Alumni – Your event registration is confirmed!`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:32px 24px;background:#f9fafb;border-radius:8px;">
+          <h2 style="margin:0 0 8px;color:#1e3a5f;font-size:22px;">Welcome, ${displayName}! 🎉</h2>
+          <p style="color:#52525b;font-size:14px;line-height:1.6;margin:0 0 16px;">
+            You have successfully registered for <strong>${eventTitle}</strong>. A guest account has been created for you on the <strong>CSE DIU Alumni Network</strong> so you can manage your registrations and track event updates.
+          </p>
+
+          <div style="background:#fff;border:1px solid #e4e4e7;border-radius:6px;padding:20px;margin:0 0 20px;">
+            <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#3f3f46;">Your Login Credentials</p>
+            <p style="margin:0 0 4px;font-size:14px;color:#52525b;"><strong>Email:</strong> ${to}</p>
+            <p style="margin:0;font-size:14px;color:#52525b;"><strong>Temporary Password:</strong> <code style="background:#f4f4f5;padding:2px 6px;border-radius:4px;font-size:13px;">${tempPassword}</code></p>
+          </div>
+
+          <p style="color:#ef4444;font-size:13px;line-height:1.5;margin:0 0 20px;">
+            ⚠️ Please <a href="${loginUrl}" style="color:#ef4444;font-weight:600;">log in</a> and change your password to something strong as soon as possible.
+          </p>
+
+          ${
+            isGmail
+              ? `<p style="color:#52525b;font-size:13px;line-height:1.5;margin:0 0 20px;padding:12px;background:#eff6ff;border-radius:6px;border-left:3px solid #3b82f6;">
+              💡 <strong>Tip:</strong> Since you used a Gmail address, you can use <strong>Sign in with Google</strong> on the login page for a faster, passwordless experience in the future.
+            </p>`
+              : ''
+          }
+
+          <a href="${loginUrl}"
+            style="display:inline-block;padding:12px 28px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;margin-bottom:24px;">
+            Go to My Account
+          </a>
+
+          <p style="color:#a1a1aa;font-size:12px;margin:0;">
+            CSE DIU Alumni Network &nbsp;|&nbsp; <a href="mailto:support@csediualumni.com" style="color:#2563eb;">support@csediualumni.com</a>
+          </p>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Guest welcome email sent to ${to}`);
+  }
+
   async sendInvoiceCreated(
     to: string,
     invoiceId: string,

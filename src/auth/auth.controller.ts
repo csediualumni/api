@@ -63,6 +63,12 @@ export class AuthController {
     return this.auth.login(body.email, body.password);
   }
 
+  @Post('check-email')
+  @HttpCode(HttpStatus.OK)
+  checkEmail(@Body() body: { email: string }) {
+    return this.auth.checkEmail(body.email);
+  }
+
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   forgotPassword(@Body() body: { email: string }) {

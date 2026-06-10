@@ -95,6 +95,42 @@ export class User {
   @Column({ type: 'simple-array', nullable: true })
   skills: string[] | null;
 
+  // ── Extended alumni profile fields ────────────────────────────
+
+  @Column({ nullable: true, type: 'varchar' })
+  gender: 'male' | 'female' | null;
+
+  @Column({ nullable: true, type: 'date' })
+  birthday: string | null;
+
+  @Column({ name: 'blood_group', nullable: true, type: 'varchar' })
+  bloodGroup: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  nationality: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  religion: string | null;
+
+  @Column({ name: 'present_address', nullable: true, type: 'text' })
+  presentAddress: string | null;
+
+  @Column({ name: 'permanent_address', nullable: true, type: 'text' })
+  permanentAddress: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  profession: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  organization: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  designation: string | null;
+
+  /** True for accounts auto-created during event registration */
+  @Column({ name: 'is_guest', default: false })
+  isGuest: boolean;
+
   // ── Relations ─────────────────────────────────────────────────
 
   @OneToMany(() => UserRole, (ur) => ur.user)

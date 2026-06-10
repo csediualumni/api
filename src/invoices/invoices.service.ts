@@ -7,10 +7,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Invoice, InvoiceStatus } from '../entities/invoice.entity';
-import {
-  InvoicePayment,
-  PaymentStatus,
-} from '../entities/invoice-payment.entity';
 import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
@@ -27,11 +23,6 @@ export interface CreateInvoiceDto {
   metadata?: Record<string, unknown>;
 }
 
-export interface UpdatePaymentStatusDto {
-  status: PaymentStatus;
-  adminNote?: string;
-}
-
 @Injectable()
 export class InvoicesService {
   private readonly logger = new Logger(InvoicesService.name);
@@ -39,14 +30,11 @@ export class InvoicesService {
   constructor(
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
-    @InjectRepository(InvoicePayment)
-    private readonly paymentRepo: Repository<InvoicePayment>,
     private readonly mail: MailService,
     private readonly users: UsersService,
     private readonly config: ConfigService,
   ) {}
 
-  // ── Email helpers ─────────────────────────────────────────────
   private async getUserEmail(userId: string | null): Promise<string | null> {
     if (!userId) return null;
     const user = await this.users.findById(userId);
@@ -54,52 +42,20 @@ export class InvoicesService {
   }
 
   private paymentUrl(invoiceId: string): string {
-    const base = this.config.get<string>(
-      'FRONTEND_URL',
-      'http://localhost:4200',
-    );
+    const base = this.config.get<string>('FRONTEND_URL', 'http://localhost:4200');
     return `${base}/payment?invoiceId=${invoiceId}`;
   }
 
   private sendMailSafe(label: string, task: () => Promise<void>): void {
     task().catch((err: unknown) =>
-      this.logger.error(
-        `[EMAIL] Failed to send "${label}": ${err instanceof Error ? err.message : String(err)}`,
-      ),
+      this.logger.error(`[EMAIL] Failed to send "${label}": ${err instanceof Error ? err.message : String(err)}`),
     );
   }
-
-  // ── Helpers ──────────────────────────────────────────────────
-  private withPayments(id: string) {
-    return this.invoiceRepo.findOne({
-      where: { id },
-      relations: { payments: true },
-      order: { payments: { createdAt: 'ASC' } },
-    });
-  }
-
-  private recalcStatus(invoice: Invoice): InvoiceStatus {
-    const verifiedTotal = invoice.payments
-      .filter((p) => p.status === 'verified')
-      .reduce((s, p) => s + p.amount, 0);
-    if (verifiedTotal <= 0) return 'pending';
-    if (verifiedTotal >= invoice.totalAmount) return 'paid';
-    return 'partial';
-  }
-
-  // ── Public ───────────────────────────────────────────────────
 
   async create(dto: CreateInvoiceDto): Promise<Invoice> {
-    this.logger.log(
-      `[CREATE] type=${dto.type ?? 'donation'} amount=${dto.totalAmount} anonymous=${dto.isAnonymous ?? false} userId=${dto.userId ?? 'none'}`,
-    );
+    this.logger.log(`[CREATE] type=${dto.type ?? 'donation'} amount=${dto.totalAmount}`);
 
-    if (dto.totalAmount <= 0) {
-      this.logger.warn(
-        `[CREATE] Rejected – totalAmount must be positive (got ${dto.totalAmount})`,
-      );
-      throw new BadRequestException('totalAmount must be positive');
-    }
+    if (dto.totalAmount <= 0) throw new BadRequestException('totalAmount must be positive');
 
     const inv = this.invoiceRepo.create({
       type: dto.type ?? 'donation',
@@ -114,68 +70,29 @@ export class InvoicesService {
       status: 'pending',
     });
     const saved = await this.invoiceRepo.save(inv);
-    this.logger.log(`[CREATE] Invoice saved id=${saved.id}`);
 
     if (!saved.isAnonymous && saved.userId) {
-      this.logger.log(
-        `[EMAIL] Queuing "invoice created" email for userId=${saved.userId} invoiceId=${saved.id}`,
-      );
       this.sendMailSafe(`invoice-created invoiceId=${saved.id}`, async () => {
         const email = await this.getUserEmail(saved.userId);
-        if (!email) {
-          this.logger.warn(
-            `[EMAIL] No email found for userId=${saved.userId} – skipping invoice created email`,
-          );
-          return;
-        }
-        this.logger.log(
-          `[EMAIL] Sending "invoice created" to ${email} invoiceId=${saved.id}`,
-        );
-        await this.mail.sendInvoiceCreated(
-          email,
-          saved.id,
-          saved.description,
-          saved.totalAmount,
-          this.paymentUrl(saved.id),
-        );
-        this.logger.log(
-          `[EMAIL] "invoice created" sent successfully to ${email}`,
-        );
+        if (!email) return;
+        await this.mail.sendInvoiceCreated(email, saved.id, saved.description, saved.totalAmount, this.paymentUrl(saved.id));
       });
-    } else {
-      this.logger.log(
-        `[EMAIL] Skipping "invoice created" email – anonymous=${saved.isAnonymous} userId=${saved.userId ?? 'none'}`,
-      );
     }
-
     return saved;
   }
 
   async findById(id: string): Promise<Invoice> {
-    this.logger.debug(`[FIND] invoiceId=${id}`);
-    const inv = await this.withPayments(id);
-    if (!inv) {
-      this.logger.warn(`[FIND] Invoice not found id=${id}`);
-      throw new NotFoundException(`Invoice ${id} not found`);
-    }
+    const inv = await this.invoiceRepo.findOne({ where: { id } });
+    if (!inv) throw new NotFoundException(`Invoice ${id} not found`);
     return inv;
   }
 
-  async getRecentDonors(limit = 8): Promise<
-    {
-      donorName: string | null;
-      isAnonymous: boolean;
-      totalAmount: number;
-      campaignTitle: string | null;
-      createdAt: Date;
-      metadata: Record<string, unknown> | null;
-    }[]
-  > {
+  async getRecentDonors(limit = 8): Promise<{
+    donorName: string | null; isAnonymous: boolean; totalAmount: number;
+    campaignTitle: string | null; createdAt: Date; metadata: Record<string, unknown> | null;
+  }[]> {
     const invoices = await this.invoiceRepo.find({
-      where: [
-        { type: 'donation', status: 'paid' },
-        { type: 'donation', status: 'partial' },
-      ],
+      where: { type: 'donation', status: 'paid' },
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -189,23 +106,12 @@ export class InvoicesService {
     }));
   }
 
-  // ── User self-service ─────────────────────────────────────────
-
-  /** Returns all invoices owned by the given user, newest first. */
   findMyInvoices(userId: string): Promise<Invoice[]> {
-    return this.invoiceRepo.find({
-      where: { userId },
-      relations: { payments: true },
-      order: { createdAt: 'DESC' },
-    });
+    return this.invoiceRepo.find({ where: { userId }, order: { createdAt: 'DESC' } });
   }
 
-  // ── Admin ────────────────────────────────────────────────────
-
   findAll(page = 1, limit = 20) {
-    this.logger.debug(`[LIST] page=${page} limit=${limit}`);
     return this.invoiceRepo.find({
-      relations: { payments: true },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -216,108 +122,17 @@ export class InvoicesService {
     return this.invoiceRepo.count();
   }
 
-  async updateInvoiceStatus(
-    id: string,
-    status: InvoiceStatus,
-  ): Promise<Invoice> {
-    this.logger.log(`[STATUS UPDATE] invoiceId=${id} newStatus=${status}`);
+  async updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
     const inv = await this.findById(id);
-    const prev = inv.status;
     inv.status = status;
     await this.invoiceRepo.save(inv);
-    this.logger.log(`[STATUS UPDATE] invoiceId=${id} ${prev} -> ${status}`);
     return this.findById(id);
   }
 
-  async updatePaymentStatus(
-    invoiceId: string,
-    paymentId: string,
-    dto: UpdatePaymentStatusDto,
-  ): Promise<Invoice> {
-    this.logger.log(
-      `[PAYMENT STATUS] invoiceId=${invoiceId} paymentId=${paymentId} newStatus=${dto.status}`,
-    );
-
-    const payment = await this.paymentRepo.findOne({
-      where: { id: paymentId, invoiceId },
-    });
-    if (!payment) {
-      this.logger.warn(
-        `[PAYMENT STATUS] Payment not found paymentId=${paymentId} invoiceId=${invoiceId}`,
-      );
-      throw new NotFoundException(`Payment ${paymentId} not found`);
-    }
-
-    const prevStatus = payment.status;
-    payment.status = dto.status;
-    if (dto.adminNote !== undefined) payment.adminNote = dto.adminNote;
-    await this.paymentRepo.save(payment);
-    this.logger.log(
-      `[PAYMENT STATUS] paymentId=${paymentId} ${prevStatus} -> ${dto.status}${dto.adminNote ? ` note="${dto.adminNote}"` : ''}`,
-    );
-
-    const inv = await this.findById(invoiceId);
-    if (inv.status !== 'cancelled') {
-      const recalc = this.recalcStatus(inv);
-      if (recalc !== inv.status) {
-        this.logger.log(
-          `[STATUS RECALC] invoiceId=${invoiceId} ${inv.status} -> ${recalc}`,
-        );
-        inv.status = recalc;
-        await this.invoiceRepo.save(inv);
-      }
-    }
-
-    const result = await this.findById(invoiceId);
-
-    if (!inv.isAnonymous && inv.userId) {
-      this.logger.log(
-        `[EMAIL] Queuing "payment status updated" email for userId=${inv.userId} invoiceId=${invoiceId} status=${dto.status}`,
-      );
-      this.sendMailSafe(
-        `payment-status-updated invoiceId=${invoiceId} status=${dto.status}`,
-        async () => {
-          const email = await this.getUserEmail(inv.userId);
-          if (!email) {
-            this.logger.warn(
-              `[EMAIL] No email found for userId=${inv.userId} – skipping payment status email`,
-            );
-            return;
-          }
-          this.logger.log(
-            `[EMAIL] Sending "payment status updated" (${dto.status}) to ${email} invoiceId=${invoiceId}`,
-          );
-          await this.mail.sendPaymentStatusUpdated(
-            email,
-            invoiceId,
-            inv.description,
-            payment.amount,
-            dto.status,
-            dto.adminNote,
-          );
-          this.logger.log(
-            `[EMAIL] "payment status updated" sent successfully to ${email}`,
-          );
-        },
-      );
-    } else {
-      this.logger.log(
-        `[EMAIL] Skipping "payment status updated" email – anonymous=${inv.isAnonymous} userId=${inv.userId ?? 'none'}`,
-      );
-    }
-
-    return result;
-  }
-
-  async refundPayment(
-    invoiceId: string,
-    paymentId: string,
-    adminNote?: string,
-  ): Promise<Invoice> {
-    this.logger.log(`[REFUND] invoiceId=${invoiceId} paymentId=${paymentId}`);
-    return this.updatePaymentStatus(invoiceId, paymentId, {
-      status: 'refunded',
-      adminNote: adminNote ?? 'Refunded by admin',
-    });
+  async updateAdminNote(id: string, note: string): Promise<Invoice> {
+    const inv = await this.findById(id);
+    inv.adminNote = note;
+    await this.invoiceRepo.save(inv);
+    return inv;
   }
 }

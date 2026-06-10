@@ -83,10 +83,20 @@ export class AuthService {
     return { message: genericMessage };
   }
 
-  async resetPassword(
-    token: string,
-    newPassword: string,
-  ): Promise<{ message: string }> {
+  async checkEmail(email: string): Promise<{ exists: boolean; isGuest: boolean }> {
+    const user = await this.users.findByEmail(email.toLowerCase().trim());
+    if (!user) return { exists: false, isGuest: false };
+    return { exists: true, isGuest: !!(user as any).isGuest };
+  }
+
+  /** Issue a JWT session for a user by ID (used after guest registration auto-login) */
+  async buildSessionForUser(userId: string) {
+    const full = await this.users.findWithPermissions(userId);
+    if (!full) throw new UnauthorizedException('User not found');
+    return this.buildSession(full.id, full.email);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
     const user = await this.users.findByResetToken(token);
     if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
       throw new BadRequestException(

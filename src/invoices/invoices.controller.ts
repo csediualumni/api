@@ -56,11 +56,11 @@ class CreateInvoiceDto {
 
 class UpdateInvoiceStatusDto {
   @IsString()
-  @IsIn(['pending', 'partial', 'paid', 'cancelled', 'refunded'])
+  @IsIn(['pending', 'paid', 'cancelled', 'refunded'])
   status: InvoiceStatus;
 }
 
-class RefundPaymentDto {
+class UpdateAdminNoteDto {
   @IsString() @IsOptional() adminNote?: string;
 }
 
@@ -123,15 +123,14 @@ export class InvoicesController {
     return this.invoices.updateInvoiceStatus(id, dto.status);
   }
 
-  // ── Admin: refund a payment ───────────────────────────────────
-  @Post(':id/payments/:paymentId/refund')
+  // ── Admin: update admin note ───────────────────────────────────
+  @Patch(':id/note')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions(PERMISSIONS.INVOICES_WRITE)
-  refundPayment(
+  updateAdminNote(
     @Param('id') id: string,
-    @Param('paymentId') paymentId: string,
-    @Body() dto: RefundPaymentDto,
+    @Body() dto: UpdateAdminNoteDto,
   ) {
-    return this.invoices.refundPayment(id, paymentId, dto.adminNote);
+    return this.invoices.updateAdminNote(id, dto.adminNote ?? '');
   }
 }

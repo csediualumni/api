@@ -51,6 +51,7 @@ export const PERMISSIONS = {
   // Events management
   EVENTS_READ: 'events:read',
   EVENTS_WRITE: 'events:write',
+  EVENTS_DISTRIBUTE: 'events:distribute',
 
   // Campaigns management
   CAMPAIGNS_WRITE: 'campaigns:write',
@@ -199,6 +200,11 @@ export const ALL_PERMISSIONS: {
   {
     key: 'events:write',
     description: 'Create, update and delete events',
+    group: 'Events',
+  },
+  {
+    key: 'events:distribute',
+    description: 'Operate event booth — scan QR codes and record kit/food distribution',
     group: 'Events',
   },
   {

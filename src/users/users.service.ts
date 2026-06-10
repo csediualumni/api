@@ -32,6 +32,17 @@ export class UpdateProfileDto {
   @IsOptional() @IsArray() @IsString({ each: true }) skills?: string[];
   @IsOptional() @IsBoolean() openToMentoring?: boolean;
   @IsOptional() @IsBoolean() profileVisibility?: boolean;
+  // Extended alumni profile fields
+  @IsOptional() @IsString()  gender?: 'male' | 'female';
+  @IsOptional() @IsString()  birthday?: string;
+  @IsOptional() @IsString()  bloodGroup?: string;
+  @IsOptional() @IsString()  nationality?: string;
+  @IsOptional() @IsString()  religion?: string;
+  @IsOptional() @IsString()  presentAddress?: string;
+  @IsOptional() @IsString()  permanentAddress?: string;
+  @IsOptional() @IsString()  profession?: string;
+  @IsOptional() @IsString()  organization?: string;
+  @IsOptional() @IsString()  designation?: string;
 }
 
 export interface UpsertExperienceDto {
@@ -196,6 +207,86 @@ export class UsersService {
   }): Promise<User> {
     const user = this.userRepo.create(data);
     return this.userRepo.save(user);
+  }
+
+  /**
+   * Creates a guest account for event registration.
+   * Password is set to the phone number; isGuest=true.
+   * Returns the created user and the plain-text temp password.
+   */
+  async createGuestUser(data: {
+    email: string;
+    displayName: string;
+    phone: string;
+    gender?: string;
+    birthday?: string;
+    bloodGroup?: string;
+    nationality?: string;
+    religion?: string;
+    presentAddress?: string;
+    permanentAddress?: string;
+    profession?: string;
+    organization?: string;
+    designation?: string;
+    avatar?: string;
+    batch?: number;
+  }): Promise<{ user: User; tempPassword: string }> {
+    const tempPassword = data.phone;
+    const hashed = await import('bcryptjs').then((b) => b.hash(tempPassword, 12));
+    const user = this.userRepo.create({
+      email: data.email.toLowerCase().trim(),
+      password: hashed,
+      displayName: data.displayName,
+      phone: data.phone,
+      isGuest: true,
+      gender: data.gender as any,
+      birthday: data.birthday ?? null,
+      bloodGroup: data.bloodGroup ?? null,
+      nationality: data.nationality ?? null,
+      religion: data.religion ?? null,
+      presentAddress: data.presentAddress ?? null,
+      permanentAddress: data.permanentAddress ?? null,
+      profession: data.profession ?? null,
+      organization: data.organization ?? null,
+      designation: data.designation ?? null,
+      avatar: data.avatar ?? null,
+      batch: data.batch ?? null,
+    });
+    const saved = await this.userRepo.save(user);
+    await this.assignGuestRole(saved.id);
+    return { user: saved, tempPassword };
+  }
+
+  /**
+   * Upserts profile fields on an existing guest user during event registration.
+   * Only updates fields if the value is provided (non-null).
+   */
+  async upsertGuestProfile(
+    userId: string,
+    data: Partial<{
+      displayName: string;
+      phone: string;
+      gender: string;
+      birthday: string;
+      bloodGroup: string;
+      nationality: string;
+      religion: string;
+      presentAddress: string;
+      permanentAddress: string;
+      profession: string;
+      organization: string;
+      designation: string;
+      avatar: string;
+      batch: number;
+    }>,
+  ): Promise<void> {
+    const updates: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== undefined && v !== null) updates[k] = v;
+    }
+    if (Object.keys(updates).length > 0) {
+      await this.userRepo.update(userId, updates);
+    }
   }
 
   /**

@@ -149,6 +149,12 @@ export class Event {
   @Column({ name: 'contact_persons', type: 'jsonb', nullable: true, default: null })
   contactPersons: EventContactPerson[] | null;
 
+  @Column({ name: 'registration_open_at', type: 'timestamptz', nullable: true, default: null })
+  registrationOpenAt: Date | null;
+
+  @Column({ name: 'registration_close_at', type: 'timestamptz', nullable: true, default: null })
+  registrationCloseAt: Date | null;
+
   @OneToMany(() => EventRsvp, (rsvp) => rsvp.event)
   rsvps: EventRsvp[];
 

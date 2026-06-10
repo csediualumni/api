@@ -15,7 +15,7 @@ import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { Invoice } from '../entities/invoice.entity';
-import { InvoicePayment } from '../entities/invoice-payment.entity';
+import { EventRegistration } from '../entities/event-registration.entity';
 import { SslCommerzService } from './sslcommerz.service';
 import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
@@ -27,8 +27,8 @@ export class PaymentController {
   constructor(
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
-    @InjectRepository(InvoicePayment)
-    private readonly paymentRepo: Repository<InvoicePayment>,
+    @InjectRepository(EventRegistration)
+    private readonly registrationRepo: Repository<EventRegistration>,
     private readonly sslcz: SslCommerzService,
     private readonly mail: MailService,
     private readonly users: UsersService,
@@ -48,38 +48,15 @@ export class PaymentController {
     );
   }
 
-  private dueAmount(invoice: Invoice): number {
-    const paid = invoice.payments
-      .filter((p) => p.status === 'verified')
-      .reduce((s, p) => s + p.amount, 0);
-    return Math.max(0, invoice.totalAmount - paid);
-  }
-
-  private recalcStatus(invoice: Invoice): Invoice['status'] {
-    const verifiedTotal = invoice.payments
-      .filter((p) => p.status === 'verified')
-      .reduce((s, p) => s + p.amount, 0);
-    if (verifiedTotal <= 0) return 'pending';
-    if (verifiedTotal >= invoice.totalAmount) return 'paid';
-    return 'partial';
-  }
-
   /** POST /invoices/:id/sslcommerz/init — initiates payment session */
   @Post('invoices/:id/sslcommerz/init')
   async initPayment(@Param('id') invoiceId: string): Promise<{ gatewayUrl: string }> {
-    const invoice = await this.invoiceRepo.findOne({
-      where: { id: invoiceId },
-      relations: { payments: true },
-    });
+    const invoice = await this.invoiceRepo.findOne({ where: { id: invoiceId } });
 
     if (!invoice) throw new NotFoundException('Invoice not found');
     if (invoice.status === 'paid') throw new BadRequestException('Invoice is already paid');
     if (invoice.status === 'cancelled') throw new BadRequestException('Invoice is cancelled');
 
-    const due = this.dueAmount(invoice);
-    if (due <= 0) throw new BadRequestException('Nothing due on this invoice');
-
-    // Resolve customer info
     let customerName = invoice.donorName ?? 'Guest';
     let customerEmail = 'noreply@csediualumni.com';
     if (!invoice.isAnonymous && invoice.userId) {
@@ -92,21 +69,15 @@ export class PaymentController {
 
     const tranId = `INV-${invoiceId.slice(0, 8).toUpperCase()}-${uuidv4().slice(0, 8).toUpperCase()}`;
 
-    // Create a pending payment record before redirecting
-    const payment = this.paymentRepo.create({
-      invoiceId,
-      amount: due,
-      transactionId: tranId,
-      gateway: 'sslcommerz',
-      valId: null,
-      status: 'pending',
-    });
-    await this.paymentRepo.save(payment);
-    this.logger.log(`[INIT] Created pending payment id=${payment.id} tran_id=${tranId}`);
+    // Store transactionId on invoice so we can find it on callback
+    invoice.transactionId = tranId;
+    invoice.gateway = 'sslcommerz';
+    await this.invoiceRepo.save(invoice);
+    this.logger.log(`[INIT] Invoice id=${invoiceId} tran_id=${tranId}`);
 
     const result = await this.sslcz.initPayment({
       tranId,
-      amount: due,
+      amount: invoice.totalAmount,
       invoiceId,
       customerName,
       customerEmail,
@@ -132,11 +103,11 @@ export class PaymentController {
 
     const validated = await this.sslcz.validatePayment(valId);
     if (!validated.valid) {
-      this.logger.warn(`[IPN] Validation failed for val_id=${valId} status=${validated.status}`);
+      this.logger.warn(`[IPN] Validation failed for val_id=${valId}`);
       return { received: true };
     }
 
-    await this.markPaymentVerified(validated.tranId, valId);
+    await this.markPaid(validated.tranId, valId);
     return { received: true };
   }
 
@@ -153,10 +124,10 @@ export class PaymentController {
       try {
         const validated = await this.sslcz.validatePayment(valId);
         if (validated.valid) {
-          await this.markPaymentVerified(validated.tranId, valId);
+          await this.markPaid(validated.tranId, valId);
         }
       } catch (err) {
-        this.logger.warn(`[SUCCESS] Validation attempt failed (IPN may have handled it): ${String(err)}`);
+        this.logger.warn(`[SUCCESS] Validation attempt failed (IPN may handle it): ${String(err)}`);
       }
     }
 
@@ -167,54 +138,40 @@ export class PaymentController {
   @Post('invoices/sslcommerz/fail')
   async handleFail(
     @Query('invoiceId') invoiceId: string,
-    @Query('tranId') tranId: string,
     @Res() res: Response,
   ): Promise<void> {
-    this.logger.log(`[FAIL] invoiceId=${invoiceId} tranId=${tranId}`);
-
-    if (tranId) {
-      const payment = await this.paymentRepo.findOne({
-        where: { transactionId: tranId, status: 'pending' },
-      });
-      if (payment) {
-        payment.status = 'rejected';
-        await this.paymentRepo.save(payment);
-        this.logger.log(`[FAIL] Marked payment id=${payment.id} as rejected`);
-      }
-    }
-
+    this.logger.log(`[FAIL] invoiceId=${invoiceId}`);
     res.redirect(this.frontendUrl(`/payment/fail?invoiceId=${invoiceId}`));
   }
 
-  /** Shared: validate + mark payment verified, recalculate invoice status, send email */
-  private async markPaymentVerified(tranId: string, valId: string): Promise<void> {
-    const payment = await this.paymentRepo.findOne({
-      where: { transactionId: tranId },
-      relations: { invoice: { payments: true } },
-    });
+  /** Mark invoice as paid, confirm event registration if applicable */
+  private async markPaid(tranId: string, valId: string): Promise<void> {
+    const invoice = await this.invoiceRepo.findOne({ where: { transactionId: tranId } });
 
-    if (!payment) {
-      this.logger.warn(`[VERIFY] No payment found for tran_id=${tranId}`);
+    if (!invoice) {
+      this.logger.warn(`[MARK_PAID] No invoice found for tran_id=${tranId}`);
       return;
     }
 
-    if (payment.status === 'verified') {
-      this.logger.log(`[VERIFY] Payment id=${payment.id} already verified, skipping`);
+    if (invoice.status === 'paid') {
+      this.logger.log(`[MARK_PAID] Invoice id=${invoice.id} already paid, skipping`);
       return;
     }
 
-    payment.status = 'verified';
-    payment.valId = valId;
-    await this.paymentRepo.save(payment);
-    this.logger.log(`[VERIFY] Payment id=${payment.id} marked verified`);
+    invoice.status = 'paid';
+    invoice.valId = valId;
+    invoice.paidAt = new Date();
+    await this.invoiceRepo.save(invoice);
+    this.logger.log(`[MARK_PAID] Invoice id=${invoice.id} marked paid`);
 
-    // Recalculate invoice status
-    const invoice = payment.invoice;
-    const newStatus = this.recalcStatus(invoice);
-    if (invoice.status !== newStatus) {
-      invoice.status = newStatus;
-      await this.invoiceRepo.save(invoice);
-      this.logger.log(`[VERIFY] Invoice id=${invoice.id} status updated to ${newStatus}`);
+    // Auto-confirm event registration
+    if (invoice.type === 'event') {
+      const reg = await this.registrationRepo.findOne({ where: { invoiceId: invoice.id } });
+      if (reg && reg.status === 'pending_payment') {
+        reg.status = 'confirmed';
+        await this.registrationRepo.save(reg);
+        this.logger.log(`[MARK_PAID] Event registration id=${reg.id} auto-confirmed`);
+      }
     }
 
     // Send confirmation email
@@ -226,7 +183,7 @@ export class PaymentController {
           user.email,
           invoice.id,
           invoice.description,
-          payment.amount,
+          invoice.totalAmount,
           'verified',
         );
       });

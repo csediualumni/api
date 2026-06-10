@@ -26,7 +26,7 @@ export class InvoicePayment {
   @Column({ name: 'invoice_id', type: 'varchar' })
   invoiceId: string;
 
-  @ManyToOne(() => Invoice, (inv) => inv.payments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Invoice, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'invoice_id' })
   invoice: Invoice;
 

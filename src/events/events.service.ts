@@ -4,7 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
+import * as crypto from 'crypto';
 import {
   IsArray,
   IsBoolean,
@@ -36,10 +38,16 @@ import { EventExpense } from '../entities/event-expense.entity';
 import { EventIncome } from '../entities/event-income.entity';
 import { EventCheckIn } from '../entities/event-checkin.entity';
 import type { CheckInType } from '../entities/event-checkin.entity';
+import { EventDistributionItem } from '../entities/event-distribution-item.entity';
+import type { DistributionItemType } from '../entities/event-distribution-item.entity';
+import { EventDistribution } from '../entities/event-distribution.entity';
+import type { RecipientType } from '../entities/event-distribution.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { AccountTransaction } from '../entities/account-transaction.entity';
 import { AccountCategory } from '../entities/account-category.entity';
 import { User } from '../entities/user.entity';
+import { UserExperience } from '../entities/user-experience.entity';
+import { UserEducation } from '../entities/user-education.entity';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -137,6 +145,8 @@ export class UpdateEventDto {
   @IsOptional() @IsInt() @Min(0) familyMemberFee?: number | null;
   @IsOptional() @IsBoolean() donationEnabled?: boolean;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ContactPersonDto) contactPersons?: ContactPersonDto[];
+  @IsOptional() @IsDateString() registrationOpenAt?: string | null;
+  @IsOptional() @IsDateString() registrationCloseAt?: string | null;
 }
 
 export class FamilyMemberDto {
@@ -206,6 +216,82 @@ export class CheckInDto {
   @IsOptional() @IsString() customLabel?: string;
 }
 
+// ── Distribution DTOs ──────────────────────────────────────────────────────
+
+const VALID_DISTRIBUTION_TYPES: DistributionItemType[] = [
+  'kit', 'breakfast', 'lunch', 'snacks', 'dinner', 'gift', 'custom',
+];
+
+export class CreateDistributionItemDto {
+  @IsIn(VALID_DISTRIBUTION_TYPES) itemType!: DistributionItemType;
+  @IsOptional() @IsString() customLabel?: string;
+  @IsOptional() @IsBoolean() appliesToMain?: boolean;
+  @IsOptional() @IsBoolean() appliesToFamily?: boolean;
+  @IsOptional() @IsInt() @Min(0) quantityPerMain?: number;
+  @IsOptional() @IsInt() @Min(0) quantityPerFamily?: number;
+  @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+}
+
+export class UpdateDistributionItemDto {
+  @IsOptional() @IsIn(VALID_DISTRIBUTION_TYPES) itemType?: DistributionItemType;
+  @IsOptional() @IsString() customLabel?: string;
+  @IsOptional() @IsBoolean() appliesToMain?: boolean;
+  @IsOptional() @IsBoolean() appliesToFamily?: boolean;
+  @IsOptional() @IsInt() @Min(0) quantityPerMain?: number;
+  @IsOptional() @IsInt() @Min(0) quantityPerFamily?: number;
+  @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+}
+
+export class DistributeDto {
+  @IsString() @IsNotEmpty() registrationId!: string;
+  @IsString() @IsNotEmpty() distributionItemId!: string;
+  @IsIn(['main', 'family']) recipientType!: RecipientType;
+  @IsOptional() @IsInt() @Min(1) quantity?: number;
+}
+
+// ── Guest registration profile DTO ────────────────────────────────────────
+
+export class GuestExpDto {
+  @IsString() @IsNotEmpty() title!: string;
+  @IsString() @IsNotEmpty() company!: string;
+  @IsString() @IsNotEmpty() from!: string;
+  @IsString() @IsNotEmpty() to!: string;
+}
+
+export class GuestEduDto {
+  @IsString() @IsNotEmpty() degree!: string;
+  @IsString() @IsNotEmpty() institution!: string;
+  @IsOptional() @IsInt() year?: number | null;
+}
+
+export class GuestProfileDto {
+  @IsString() @IsNotEmpty() fullName!: string;
+  @IsString() @IsNotEmpty() email!: string;
+  @IsString() @IsNotEmpty() phone!: string;
+  @IsIn(['male', 'female']) gender!: string;
+  @IsOptional() @IsString() birthday?: string;
+  @IsOptional() @IsString() bloodGroup?: string;
+  @IsOptional() @IsString() nationality?: string;
+  @IsOptional() @IsString() religion?: string;
+  @IsOptional() @IsString() presentAddress?: string;
+  @IsOptional() @IsString() permanentAddress?: string;
+  @IsOptional() @IsString() profession?: string;
+  @IsOptional() @IsString() organization?: string;
+  @IsOptional() @IsString() designation?: string;
+  @IsOptional() @IsString() photo?: string;
+  @IsOptional() @IsInt() @Min(1970) batch?: number;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => GuestExpDto) experiences?: GuestExpDto[];
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => GuestEduDto) educations?: GuestEduDto[];
+}
+
+export class RegisterWithProfileDto {
+  @ValidateNested() @Type(() => GuestProfileDto) profile!: GuestProfileDto;
+  @IsOptional() @IsIn(VALID_TSHIRT_SIZES) tShirtSize?: TShirtSize;
+  @IsOptional() @IsInt() @Min(0) familyMembersCount?: number;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => FamilyMemberDto) familyMembers?: FamilyMemberDto[];
+  @IsOptional() @IsInt() @Min(0) donationAmount?: number;
+}
+
 export type EventWithMeta = Event & {
   rsvpCount: number;
   seatsLeft: number | null;
@@ -232,13 +318,47 @@ export class EventsService {
     private readonly incomeRepo: Repository<EventIncome>,
     @InjectRepository(EventCheckIn)
     private readonly checkInRepo: Repository<EventCheckIn>,
+    @InjectRepository(EventDistributionItem)
+    private readonly distItemRepo: Repository<EventDistributionItem>,
+    @InjectRepository(EventDistribution)
+    private readonly distRepo: Repository<EventDistribution>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(UserExperience)
+    private readonly expRepo: Repository<UserExperience>,
+    @InjectRepository(UserEducation)
+    private readonly eduRepo: Repository<UserEducation>,
     @InjectRepository(Invoice)
     private readonly invoiceRepo: Repository<Invoice>,
     @InjectRepository(AccountTransaction)
     private readonly txRepo: Repository<AccountTransaction>,
     @InjectRepository(AccountCategory)
     private readonly categoryRepo: Repository<AccountCategory>,
+    private readonly config: ConfigService,
   ) {}
+
+  // ── QR signing helpers ────────────────────────────────────────────────────
+
+  private getQrSecret(): string {
+    return this.config.get<string>('QR_SECRET', 'csediualumni-qr-secret');
+  }
+
+  private signQrToken(registrationId: string): string {
+    return crypto
+      .createHmac('sha256', this.getQrSecret())
+      .update(registrationId)
+      .digest('hex')
+      .slice(0, 16);
+  }
+
+  verifyQrToken(registrationId: string, sig: string): boolean {
+    return this.signQrToken(registrationId) === sig;
+  }
+
+  getBoothQrUrl(eventId: string, registrationId: string, frontendUrl: string): string {
+    const sig = this.signQrToken(registrationId);
+    return `${frontendUrl}/events/${eventId}/booth?reg=${registrationId}&sig=${sig}`;
+  }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -381,6 +501,8 @@ export class EventsService {
     if (dto.donationEnabled !== undefined) event.donationEnabled = dto.donationEnabled;
     if (dto.contactPersons !== undefined)
       event.contactPersons = dto.contactPersons?.length ? (dto.contactPersons as EventContactPerson[]) : null;
+    if (dto.registrationOpenAt !== undefined) event.registrationOpenAt = dto.registrationOpenAt ? new Date(dto.registrationOpenAt) : null;
+    if (dto.registrationCloseAt !== undefined) event.registrationCloseAt = dto.registrationCloseAt ? new Date(dto.registrationCloseAt) : null;
 
     const saved = await this.eventRepo.save(event);
     const [enriched] = await this.attachMeta([saved]);
@@ -391,6 +513,13 @@ export class EventsService {
     const event = await this.eventRepo.findOne({ where: { id } });
     if (!event) throw new NotFoundException('Event not found.');
     await this.eventRepo.remove(event);
+  }
+
+  async flushRegistrations(id: string): Promise<{ deleted: number }> {
+    const event = await this.eventRepo.findOne({ where: { id } });
+    if (!event) throw new NotFoundException('Event not found.');
+    const result = await this.registrationRepo.delete({ eventId: id });
+    return { deleted: result.affected ?? 0 };
   }
 
   // ── Publish / Unpublish ───────────────────────────────────────────────────
@@ -625,9 +754,7 @@ export class EventsService {
     const event = await this.eventRepo.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found.');
 
-    const user = await this.registrationRepo.manager
-      .getRepository(User)
-      .findOne({ where: { phone: phone.trim() } });
+    const user = await this.userRepo.findOne({ where: { phone: phone.trim() } });
 
     if (!user) throw new NotFoundException('No attendee found with this phone number.');
 
@@ -638,6 +765,43 @@ export class EventsService {
     if (!reg) throw new NotFoundException('No registration found for this attendee.');
 
     return Object.assign(reg, { user });
+  }
+
+  async boothLookupByToken(
+    eventId: string,
+    registrationId: string,
+    sig: string,
+  ): Promise<EventRegistration & { user: User; distributionItems: EventDistributionItem[]; distributions: EventDistribution[] }> {
+    if (!this.verifyQrToken(registrationId, sig)) {
+      throw new BadRequestException('Invalid or tampered QR code.');
+    }
+
+    const event = await this.eventRepo.findOne({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found.');
+
+    const reg = await this.registrationRepo.findOne({
+      where: { id: registrationId, eventId },
+      relations: { familyMembers: true, checkIns: true },
+    });
+    if (!reg) throw new NotFoundException('Registration not found.');
+
+    const user = await this.userRepo.findOne({ where: { id: reg.userId } });
+    if (!user) throw new NotFoundException('User not found.');
+
+    const [distributionItems, distributions] = await Promise.all([
+      this.distItemRepo.find({ where: { eventId }, order: { sortOrder: 'ASC' } }),
+      this.distRepo.find({ where: { registrationId } }),
+    ]);
+
+    return Object.assign(reg, { user, distributionItems, distributions });
+  }
+
+  async getMyQrUrl(eventId: string, userId: string, frontendUrl: string): Promise<{ boothUrl: string }> {
+    const reg = await this.registrationRepo.findOne({
+      where: { eventId, userId, status: 'confirmed' },
+    });
+    if (!reg) throw new NotFoundException('No confirmed registration found.');
+    return { boothUrl: this.getBoothQrUrl(eventId, reg.id, frontendUrl) };
   }
 
   // ── Check-in ──────────────────────────────────────────────────────────────
@@ -956,6 +1120,317 @@ export class EventsService {
       relations: { user: true },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  // ── Guest registration (register-with-profile) ────────────────────────────
+
+  async registerWithProfile(
+    eventId: string,
+    dto: RegisterWithProfileDto,
+    frontendUrl: string,
+  ): Promise<{
+    message: string;
+    registration: EventRegistration;
+    invoiceId?: string;
+    paymentUrl?: string;
+    accessToken?: string;
+    isNewUser: boolean;
+  }> {
+    const event = await this.eventRepo.findOne({ where: { id: eventId, published: true } });
+    if (!event) throw new NotFoundException('Event not found or not published.');
+
+    const email = dto.profile.email.toLowerCase().trim();
+    let user = await this.userRepo.findOne({ where: { email } });
+
+    if (user && !user.isGuest) {
+      // Existing full account — cannot register on their behalf; they must log in
+      throw new BadRequestException(
+        JSON.stringify({ requiresLogin: true, message: 'An account with this email already exists. Please log in first.' }),
+      );
+    }
+
+    let isNewUser = false;
+    if (!user) {
+      // Create guest user
+      const hashed = await import('bcryptjs').then((b) => b.hash(dto.profile.phone, 12));
+      const created = this.userRepo.create({
+        email,
+        password: hashed,
+        displayName: dto.profile.fullName,
+        phone: dto.profile.phone,
+        isGuest: true,
+        gender: dto.profile.gender as any,
+        birthday: dto.profile.birthday ?? null,
+        bloodGroup: dto.profile.bloodGroup ?? null,
+        nationality: dto.profile.nationality ?? null,
+        religion: dto.profile.religion ?? null,
+        presentAddress: dto.profile.presentAddress ?? null,
+        permanentAddress: dto.profile.permanentAddress ?? null,
+        profession: dto.profile.profession ?? null,
+        organization: dto.profile.organization ?? null,
+        designation: dto.profile.designation ?? null,
+        avatar: dto.profile.photo ?? null,
+        batch: dto.profile.batch ?? null,
+      });
+      user = await this.userRepo.save(created);
+      isNewUser = true;
+    } else {
+      // Upsert profile on existing guest
+      const updates: Record<string, unknown> = {
+        displayName: dto.profile.fullName,
+        phone: dto.profile.phone,
+        gender: dto.profile.gender,
+      };
+      if (dto.profile.birthday) updates['birthday'] = dto.profile.birthday;
+      if (dto.profile.bloodGroup) updates['bloodGroup'] = dto.profile.bloodGroup;
+      if (dto.profile.nationality) updates['nationality'] = dto.profile.nationality;
+      if (dto.profile.religion) updates['religion'] = dto.profile.religion;
+      if (dto.profile.presentAddress) updates['presentAddress'] = dto.profile.presentAddress;
+      if (dto.profile.permanentAddress) updates['permanentAddress'] = dto.profile.permanentAddress;
+      if (dto.profile.profession) updates['profession'] = dto.profile.profession;
+      if (dto.profile.organization) updates['organization'] = dto.profile.organization;
+      if (dto.profile.designation) updates['designation'] = dto.profile.designation;
+      if (dto.profile.photo) updates['avatar'] = dto.profile.photo;
+      if (dto.profile.batch) updates['batch'] = dto.profile.batch;
+      await this.userRepo.update(user.id, updates);
+      user = await this.userRepo.findOneOrFail({ where: { id: user.id } });
+    }
+
+    // Save experiences (replace all for this user if provided)
+    if (dto.profile.experiences?.length) {
+      await this.expRepo.delete({ userId: user.id });
+      const exps = dto.profile.experiences.map((e, i) =>
+        this.expRepo.create({ userId: user.id, title: e.title, company: e.company, from: e.from, to: e.to, sortOrder: i }),
+      );
+      await this.expRepo.save(exps);
+    }
+
+    // Save educations (replace all for this user if provided)
+    if (dto.profile.educations?.length) {
+      await this.eduRepo.delete({ userId: user.id });
+      const edus = dto.profile.educations.map((e, i) =>
+        this.eduRepo.create({ userId: user.id, degree: e.degree, institution: e.institution, year: e.year ?? null, sortOrder: i }),
+      );
+      await this.eduRepo.save(edus);
+    }
+
+    // Delegate to the existing register() logic
+    const result = await this.register(eventId, user.id, {
+      tShirtSize: dto.tShirtSize,
+      familyMembersCount: dto.familyMembersCount,
+      familyMembers: dto.familyMembers,
+      donationAmount: dto.donationAmount,
+    });
+
+    return { ...result, isNewUser };
+  }
+
+  // ── Distribution item management (admin) ──────────────────────────────────
+
+  async listDistributionItems(eventId: string): Promise<EventDistributionItem[]> {
+    return this.distItemRepo.find({ where: { eventId }, order: { sortOrder: 'ASC' } });
+  }
+
+  async createDistributionItem(eventId: string, dto: CreateDistributionItemDto): Promise<EventDistributionItem> {
+    const event = await this.eventRepo.findOne({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found.');
+    return this.distItemRepo.save(
+      this.distItemRepo.create({
+        eventId,
+        itemType: dto.itemType,
+        customLabel: dto.customLabel ?? null,
+        appliesToMain: dto.appliesToMain ?? true,
+        appliesToFamily: dto.appliesToFamily ?? false,
+        quantityPerMain: dto.quantityPerMain ?? 1,
+        quantityPerFamily: dto.quantityPerFamily ?? 1,
+        sortOrder: dto.sortOrder ?? 0,
+      }),
+    );
+  }
+
+  async updateDistributionItem(
+    eventId: string,
+    itemId: string,
+    dto: UpdateDistributionItemDto,
+  ): Promise<EventDistributionItem> {
+    const item = await this.distItemRepo.findOne({ where: { id: itemId, eventId } });
+    if (!item) throw new NotFoundException('Distribution item not found.');
+    Object.assign(item, {
+      ...(dto.itemType !== undefined && { itemType: dto.itemType }),
+      ...(dto.customLabel !== undefined && { customLabel: dto.customLabel }),
+      ...(dto.appliesToMain !== undefined && { appliesToMain: dto.appliesToMain }),
+      ...(dto.appliesToFamily !== undefined && { appliesToFamily: dto.appliesToFamily }),
+      ...(dto.quantityPerMain !== undefined && { quantityPerMain: dto.quantityPerMain }),
+      ...(dto.quantityPerFamily !== undefined && { quantityPerFamily: dto.quantityPerFamily }),
+      ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+    });
+    return this.distItemRepo.save(item);
+  }
+
+  async removeDistributionItem(eventId: string, itemId: string): Promise<void> {
+    const item = await this.distItemRepo.findOne({ where: { id: itemId, eventId } });
+    if (!item) throw new NotFoundException('Distribution item not found.');
+    await this.distItemRepo.remove(item);
+  }
+
+  // ── Distribution (volunteer booth) ───────────────────────────────────────
+
+  async distribute(
+    eventId: string,
+    dto: DistributeDto,
+    distributedByUserId: string,
+    deviceInfo: Record<string, string> | null,
+  ): Promise<EventDistribution> {
+    const reg = await this.registrationRepo.findOne({
+      where: { id: dto.registrationId, eventId, status: 'confirmed' },
+    });
+    if (!reg) throw new NotFoundException('Confirmed registration not found.');
+
+    const item = await this.distItemRepo.findOne({ where: { id: dto.distributionItemId, eventId } });
+    if (!item) throw new NotFoundException('Distribution item not found.');
+
+    if (dto.recipientType === 'main' && !item.appliesToMain) {
+      throw new BadRequestException('This item does not apply to the main registrant.');
+    }
+    if (dto.recipientType === 'family' && !item.appliesToFamily) {
+      throw new BadRequestException('This item does not apply to family members.');
+    }
+
+    // Calculate max entitlement
+    const maxQty =
+      dto.recipientType === 'main'
+        ? item.quantityPerMain
+        : item.quantityPerFamily * reg.familyMembersCount;
+
+    // Sum already distributed
+    const distributed = await this.distRepo
+      .createQueryBuilder('d')
+      .select('COALESCE(SUM(d.quantity), 0)', 'total')
+      .where('d.registration_id = :regId', { regId: dto.registrationId })
+      .andWhere('d.distribution_item_id = :itemId', { itemId: dto.distributionItemId })
+      .andWhere('d.recipient_type = :type', { type: dto.recipientType })
+      .getRawOne<{ total: string }>();
+
+    const alreadyGiven = parseInt(distributed?.total ?? '0', 10);
+    const requestedQty = dto.quantity ?? 1;
+
+    if (alreadyGiven + requestedQty > maxQty) {
+      throw new BadRequestException(
+        `Entitlement exceeded. Already distributed ${alreadyGiven}/${maxQty}.`,
+      );
+    }
+
+    return this.distRepo.save(
+      this.distRepo.create({
+        registrationId: dto.registrationId,
+        distributionItemId: dto.distributionItemId,
+        recipientType: dto.recipientType,
+        quantity: requestedQty,
+        distributedByUserId,
+        deviceInfo,
+      }),
+    );
+  }
+
+  async getDistributionSummary(eventId: string): Promise<{
+    item: EventDistributionItem;
+    entitledMain: number;
+    entitledFamily: number;
+    distributedMain: number;
+    distributedFamily: number;
+    remainingMain: number;
+    remainingFamily: number;
+  }[]> {
+    const event = await this.eventRepo.findOne({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found.');
+
+    const items = await this.distItemRepo.find({ where: { eventId }, order: { sortOrder: 'ASC' } });
+
+    const [mainCount, familyTotal] = await Promise.all([
+      this.registrationRepo.count({ where: { eventId, status: 'confirmed' } }),
+      this.registrationRepo
+        .createQueryBuilder('r')
+        .select('COALESCE(SUM(r.family_members_count), 0)', 'total')
+        .where('r.event_id = :eventId', { eventId })
+        .andWhere('r.status = :status', { status: 'confirmed' })
+        .getRawOne<{ total: string }>(),
+    ]);
+
+    const totalFamilyMembers = parseInt(familyTotal?.total ?? '0', 10);
+
+    const distTotals = await this.distRepo
+      .createQueryBuilder('d')
+      .select('d.distribution_item_id', 'itemId')
+      .addSelect('d.recipient_type', 'recipientType')
+      .addSelect('COALESCE(SUM(d.quantity), 0)', 'total')
+      .innerJoin('event_registrations', 'r', 'r.id = d.registration_id')
+      .where('r.event_id = :eventId', { eventId })
+      .groupBy('d.distribution_item_id')
+      .addGroupBy('d.recipient_type')
+      .getRawMany<{ itemId: string; recipientType: string; total: string }>();
+
+    const distMap = new Map<string, number>();
+    for (const row of distTotals) {
+      distMap.set(`${row.itemId}:${row.recipientType}`, parseInt(row.total, 10));
+    }
+
+    return items.map((item) => {
+      const entitledMain = item.appliesToMain ? mainCount * item.quantityPerMain : 0;
+      const entitledFamily = item.appliesToFamily ? totalFamilyMembers * item.quantityPerFamily : 0;
+      const distributedMain = distMap.get(`${item.id}:main`) ?? 0;
+      const distributedFamily = distMap.get(`${item.id}:family`) ?? 0;
+      return {
+        item,
+        entitledMain,
+        entitledFamily,
+        distributedMain,
+        distributedFamily,
+        remainingMain: Math.max(0, entitledMain - distributedMain),
+        remainingFamily: Math.max(0, entitledFamily - distributedFamily),
+      };
+    });
+  }
+
+  async getDistributionLog(
+    eventId: string,
+    skip = 0,
+    take = 50,
+  ): Promise<{ data: EventDistribution[]; total: number }> {
+    const event = await this.eventRepo.findOne({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found.');
+
+    const [data, total] = await this.distRepo
+      .createQueryBuilder('d')
+      .innerJoin('event_registrations', 'r', 'r.id = d.registration_id')
+      .where('r.event_id = :eventId', { eventId })
+      .leftJoinAndSelect('d.registration', 'reg')
+      .leftJoinAndSelect('reg.user', 'user')
+      .leftJoinAndSelect('d.distributionItem', 'item')
+      .leftJoinAndSelect('d.distributedBy', 'vol')
+      .orderBy('d.distributed_at', 'DESC')
+      .skip(skip)
+      .take(take)
+      .getManyAndCount();
+
+    return { data, total };
+  }
+
+  async getRegistrationDistributions(registrationId: string): Promise<{
+    distributions: EventDistribution[];
+    items: EventDistributionItem[];
+  }> {
+    const reg = await this.registrationRepo.findOne({ where: { id: registrationId } });
+    if (!reg) throw new NotFoundException('Registration not found.');
+
+    const [distributions, items] = await Promise.all([
+      this.distRepo.find({
+        where: { registrationId },
+        relations: { distributionItem: true },
+      }),
+      this.distItemRepo.find({ where: { eventId: reg.eventId }, order: { sortOrder: 'ASC' } }),
+    ]);
+
+    return { distributions, items };
   }
 }
 
