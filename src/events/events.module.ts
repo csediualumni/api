@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Event } from '../entities/event.entity';
 import { EventRsvp } from '../entities/event-rsvp.entity';
@@ -26,6 +27,14 @@ import { EventsController } from './events.controller';
 @Module({
   imports: [
     ConfigModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '7d' as unknown as number },
+      }),
+      inject: [ConfigService],
+    }),
     TypeOrmModule.forFeature([
       Event,
       EventRsvp,

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import {
@@ -335,6 +336,7 @@ export class EventsService {
     @InjectRepository(AccountCategory)
     private readonly categoryRepo: Repository<AccountCategory>,
     private readonly config: ConfigService,
+    private readonly jwt: JwtService,
   ) {}
 
   // ── QR signing helpers ────────────────────────────────────────────────────
@@ -1242,7 +1244,10 @@ export class EventsService {
       donationAmount: dto.donationAmount,
     });
 
-    return { ...result, isNewUser };
+    // Mint a JWT so the frontend can immediately upload a profile picture file
+    const accessToken = this.jwt.sign({ sub: user.id, email: user.email });
+
+    return { ...result, isNewUser, accessToken };
   }
 
   // ── Distribution item management (admin) ──────────────────────────────────
